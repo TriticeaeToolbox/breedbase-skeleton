@@ -1,0 +1,113 @@
+#! /bin/bash
+
+#
+# DB BACKUP
+# =========
+# A utility script to backup a specified postgres database 
+# to a specified output file using `pg_dump`
+#
+# Author: David Waring <djw64@cornell.edu>
+# Version: 2.0
+
+# Get BB Home Directory
+SOURCE="${BASH_SOURCE[0]}"
+while [ -h "$SOURCE" ]; do # resolve $SOURCE until the file is no longer a symlink
+  DIR="$( cd -P "$( dirname "$SOURCE" )" >/dev/null 2>&1 && pwd )"
+  SOURCE="$(readlink "$SOURCE")"
+  [[ $SOURCE != /* ]] && SOURCE="$DIR/$SOURCE" # if $SOURCE was a relative symlink, we need to resolve it relative to the path where the symlink file was located
+done
+DIR="$( cd -P "$( dirname "$SOURCE" )" >/dev/null 2>&1 && pwd )"
+BB_HOME="$(dirname $DIR)"
+
+# pg_dump location
+PG_DUMP="$(which pg_dump)"
+
+# Script Defaults
+DEFAULT_OUTPUT_DIR="$BB_HOME/backups"
+DEFAULT_PG_HOST="localhost"
+DEFAULT_PG_PORT="5432"
+DEFAULT_PG_USER="postgres"
+
+
+####
+## USAGE
+####
+
+USAGE=$(cat <<-END
+  DATABASE BACKUP UTILITY
+  -----------------------
+  Usage: $0 -d <database> [-o <output>] [-h <host>] [-p <port>] [-u <username>]
+
+  Options:
+    -d <database>       The name of the postgres database to backup
+    -o <output>         The path to the output file of the backup (optional)
+                        Default: $DEFAULT_OUTPUT_DIR/{database}.{timestamp}.sql
+    -h <host>           The postgres database host (optional)
+                        Default: $DEFAULT_PG_HOST
+    -p <port>           The postgres database port (optional)
+                        Default: $DEFAULT_PG_PORT
+    -u <username>       The postgres username (optional)
+                        Default: $DEFAULT_PG_USER
+END
+)
+
+
+
+####
+## PARSE OPTIONS
+####
+
+DATABASE=""
+OUTPUT=""
+PG_HOST="$DEFAULT_PG_HOST"
+PG_PORT="$DEFAULT_PG_PORT"
+PG_USER="$DEFAULT_PG_USER"
+
+OPTIND=1
+while getopts "d:o:h:p:u:" opt; do
+    case "$opt" in
+        d)
+            DATABASE="$OPTARG"
+            ;;
+        o)
+            OUTPUT="$OPTARG"
+            ;;
+        h)
+            PG_HOST="$OPTARG"
+            ;;
+        p)
+            PG_PORT="$OPTARG"
+            ;;
+        u)
+            PG_USER="$OPTARG"
+            ;;
+        *)
+            echo "$USAGE"
+            exit 1
+            ;;
+    esac
+done
+shift "$((OPTIND-1))"
+
+
+
+####
+## BACKUP
+####
+
+
+# Check required parameters
+if [ -z "$DATABASE" ]; then
+    echo "ERROR: Database not specified"
+    echo "$USAGE"
+    exit 1
+fi
+
+# Check output location
+if [ -z "$OUTPUT" ]; then
+    OUTPUT="$DEFAULT_OUTPUT_DIR"/"$DATABASE".`date +"%Y%m%d_%H%M"`.sql
+fi
+
+# Perform Backup
+echo "Backing up $DATABASE to $OUTPUT..."
+"$PG_DUMP" -h "$PG_HOST" -p "$PG_PORT" -U "$PG_USER" -Fc "$DATABASE" > "$OUTPUT"

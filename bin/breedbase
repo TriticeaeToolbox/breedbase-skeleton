@@ -1,0 +1,237 @@
+#! /bin/bash
+
+#
+# BREEDBASE
+# =========
+# A utility script for starting and stopping breedbase docker containers (using docker-compose)
+# as well as useful commands for interacting with running containers
+#
+# Author: David Waring <djw64@cornell.edu>
+# Version: 2.0
+#
+
+
+# Get BB Home Directory
+SOURCE="${BASH_SOURCE[0]}"
+while [ -h "$SOURCE" ]; do # resolve $SOURCE until the file is no longer a symlink
+  DIR="$( cd -P "$( dirname "$SOURCE" )" >/dev/null 2>&1 && pwd )"
+  SOURCE="$(readlink "$SOURCE")"
+  [[ $SOURCE != /* ]] && SOURCE="$DIR/$SOURCE" # if $SOURCE was a relative symlink, we need to resolve it relative to the path where the symlink file was located
+done
+DIR="$( cd -P "$( dirname "$SOURCE" )" >/dev/null 2>&1 && pwd )"
+BB_HOME="$(dirname $DIR)"
+
+
+# Path to breedbase docker compose file
+DOCKER_COMPOSE_FILE="$BB_HOME/docker-compose.yml"
+
+# Path to Docker binaries
+DOCKER="$(which docker)"
+DOCKER_COMPOSE="$(which docker-compose)"
+
+# Docker Container Labels
+DOCKER_LABEL_DB="breedbase_db"
+DOCKER_LABEL_WEB="breedbase_web"
+
+# Name of breedbase postgres docker service
+DOCKER_DB_SERVICE="breedbase_db"
+
+
+
+####
+## USAGE
+####
+
+USAGE=$(cat <<-END
+  BREEDBASE HELPER UTILITY
+  ------------------------
+  Usage: $0 <command> [arguments]
+
+  Commands:
+    status                              Get the status of the breedbase database and web containers
+    start [db|triticum|avena|hordeum]   Start the breedbase database container and all defined web containers (or the specified services)
+    stop [db|triticum|avena|hordeum]    Stop the breedbase database container and all defined web containers (or the specified services)
+    clean                               Stop and remove all of the breedbase containers
+    log  <triticum|avena|hordeum>       Display the breedbase web site error log for the specified web service
+    bash  <triticum|avena|hordeum>      Start bash shell in the web container for the specified web service
+    reload  <triticum|avena|hordeum>    Reload the sgn web-app (to incorporate configuration and code changes)
+END
+)
+
+
+########
+# STATUS
+# Get status information of containers
+########
+status() {
+    format="table {{.Names}}\t{{.Status}}\t{{.Ports}}\t{{.Image}}"
+
+    echo "======== DATABASE STATUS ========"
+    "$DOCKER" container ls -a --filter label=org.breedbase.type="$DOCKER_LABEL_DB" --format "$format"
+
+    echo ""
+
+    echo "========== WEB STATUS ==========="
+    "$DOCKER" container ls -a --filter label=org.breedbase.type="$DOCKER_LABEL_WEB" --format "$format"
+}
+
+
+########
+# START
+# Start all of the docker services (database and all web instances)
+########
+start() {
+    args="$@"
+    if [ -z "$args" ]; then
+        "$DOCKER_COMPOSE" -f "$DOCKER_COMPOSE_FILE" up --detach
+    else
+        for arg in `echo $args`; do
+            if [[ "$arg" == "db" ]]; then
+                start_db
+            else
+                start_web "$arg"
+            fi
+        done
+    fi
+}
+
+
+########
+# STOP
+# Stop all of the docker services (database and all web instances)
+########
+stop() {
+    args="$@"
+    if [ -z "$args" ]; then
+        services=`"$DOCKER_COMPOSE" -f "$DOCKER_COMPOSE_FILE" config --services`
+        while IFS= read -r service; do 
+            "$DOCKER_COMPOSE" -f "$DOCKER_COMPOSE_FILE" stop "$service"
+        done <<< "$services"
+    else
+        for arg in `echo $args`; do
+            if [[ "$arg" == "db" ]]; then
+                stop_db
+            else
+                stop_web "$arg"
+            fi
+        done
+    fi
+}
+
+
+########
+# CLEAN
+# Stop and remove all of the docker containers (database and all web services)
+########
+clean() {
+    "$DOCKER_COMPOSE" -f "$DOCKER_COMPOSE_FILE" down
+}
+
+
+########
+# START DB
+# Start the DB Service
+########
+start_db() {
+    "$DOCKER_COMPOSE" -f "$DOCKER_COMPOSE_FILE" up --no-start
+    "$DOCKER_COMPOSE" -f "$DOCKER_COMPOSE_FILE" start "$DOCKER_DB_SERVICE"
+}
+
+
+#######
+# STOP DB
+# Stop the DB Service
+#######
+stop_db() {
+    "$DOCKER_COMPOSE" -f "$DOCKER_COMPOSE_FILE" stop "$DOCKER_DB_SERVICE"
+}
+
+
+########
+# START WEB
+# Start the specified web service
+# Arguments:
+#   service - the breedbase web service name
+########
+start_web() {
+    "$DOCKER_COMPOSE" -f "$DOCKER_COMPOSE_FILE" up --no-start
+    "$DOCKER_COMPOSE" -f "$DOCKER_COMPOSE_FILE" start "$1"
+}
+
+
+########
+# STOP WEB
+# Stop the specified web service
+# Arguments:
+#   service - the breedbase web service name
+########
+stop_web() {
+    "$DOCKER_COMPOSE" -f "$DOCKER_COMPOSE_FILE" stop "$1"
+}
+
+
+########
+# LOG
+# Display the SGN error log for the specified web service
+# Arguments:
+#   service - the breedbase web service name
+########
+log() {
+    "$DOCKER_COMPOSE" -f "$DOCKER_COMPOSE_FILE" exec "$1" tail -f /var/log/sgn/error.log
+}
+
+
+#########
+# BASH
+# Start a bash shell in the container of the specified web service
+# Arguments:
+#   service - the breedbase web service name
+########
+bash() {
+    "$DOCKER_COMPOSE" -f "$DOCKER_COMPOSE_FILE" exec "$1" bash
+}
+
+
+########
+# RELOAD
+# Send a sighup signal to the SGN web app to reload the specified web service
+# Arguments
+#   service - the breedbase web service name
+########
+reload() {
+    "$DOCKER_COMPOSE" -f "$DOCKER_COMPOSE_FILE" exec "$1" bash -c 'kill -SIGHUP $(cat /tmp/sgn.pid)'
+}
+
+
+
+####
+## PARSE COMMAND
+####
+arg1="$2"
+args="${@:2}"
+case "$1" in
+    "status")
+        status
+        ;;
+    "start")
+        start "$args"
+        ;;
+    "stop")
+        stop "$args"
+        ;;
+    "clean")
+        clean
+        ;;
+    "log")
+        log "$arg1"
+        ;;
+    "bash")
+        bash "$arg1"
+        ;;
+    "reload")
+        reload "$arg1"
+        ;;
+    *)
+        echo "$USAGE"
+        exit 1
+esac

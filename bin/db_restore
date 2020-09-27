@@ -1,0 +1,105 @@
+#! /bin/bash
+
+#
+# DB RESTORE
+# ==========
+# A utility script to restore a specified postgres database 
+# from a specified backup file generated using `pg_dump`
+#
+# Author: David Waring <djw64@cornell.edu>
+# Version: 2.0
+#
+
+# pg_restore location
+PG_RESTORE="$(which pg_restore)"
+
+# Script Defaults
+DEFAULT_PG_HOST="localhost"
+DEFAULT_PG_PORT="5432"
+DEFAULT_PG_USER="postgres"
+
+
+####
+## USAGE
+####
+
+USAGE=$(cat <<-END
+  DATABASE RESTORE UTILITY
+  ------------------------
+  Usage: $0 -d <database> -i <input> [-h <host>] [-p <port>] [-u <username>]
+
+  Options:
+    -d <database>       The name of the postgres database to backup
+    -i <input>          The path to the input file (postgres dump file)
+    -h <host>           The postgres database host (optional)
+                        Default: $DEFAULT_PG_HOST
+    -p <port>           The postgres database port (optional)
+                        Default: $DEFAULT_PG_PORT
+    -u <username>       The postgres username (optional)
+                        Default: $DEFAULT_PG_USER
+END
+)
+
+
+
+####
+## PARSE OPTIONS
+####
+
+DATABASE=""
+INPUT=""
+PG_HOST="$DEFAULT_PG_HOST"
+PG_PORT="$DEFAULT_PG_PORT"
+PG_USER="$DEFAULT_PG_USER"
+
+OPTIND=1
+while getopts "d:i:h:p:u:" opt; do
+    case "$opt" in
+        d)
+            DATABASE="$OPTARG"
+            ;;
+        i)
+            INPUT="$OPTARG"
+            ;;
+        h)
+            PG_HOST="$OPTARG"
+            ;;
+        p)
+            PG_PORT="$OPTARG"
+            ;;
+        u)
+            PG_USER="$OPTARG"
+            ;;
+        *)
+            echo "$USAGE"
+            exit 1
+            ;;
+    esac
+done
+shift "$((OPTIND-1))"
+
+
+
+####
+## BACKUP
+####
+
+
+# Check required parameters
+if [ -z "$DATABASE" ]; then
+    echo "ERROR: Database not specified"
+    echo "$USAGE"
+    exit 1
+elif [ -z "$INPUT" ]; then
+    echo "ERROR: Input file not specified"
+    echo "$USAGE"
+    exit 1
+elif [ ! -f "$INPUT" ]; then
+    echp "ERROR: Input file does not exist!"
+    echo "$USAGE"
+    exit 1
+fi
+
+# Perform Restore
+echo "Restoring $DATABASE from $INPUT..."
+"$PG_RESTORE" -h "$PG_HOST" -p "$PG_PORT" -U "$PG_USER" -d "$DATABASE" --clean "$INPUT"

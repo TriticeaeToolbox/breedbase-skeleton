@@ -1,0 +1,99 @@
+version: "3.7"
+
+services:
+  triticum:
+    image: breedbase/breedbase:v0.8
+    depends_on:
+      - breedbase_db
+    container_name: breedbase_triticum
+    labels:
+      org.breedbase.type: 'breedbase_web'
+    ports:
+      - 8080:8080
+    volumes:
+      - type: bind
+        source: ./mnt/triticum/archive
+        target: /home/production/archive
+      - type: bind
+        source: ./mnt/triticum/public
+        target: /home/production/public
+      - type: bind
+        source: ./mnt/triticum/submissions
+        target: /home/production/submissions
+      - type: bind
+        source: ./config/triticum.conf
+        target: /home/production/cxgn/sgn/sgn_local.conf
+      - type: bind
+        source: ./config/triticum.mas
+        target: /home/production/cxgn/triticum/mason/instance/properties.mas
+      - type: bind
+        source: ./mnt/blast_databases/triticum
+        target: /home/production/cxgn_blast_databases
+  avena:
+    image: breedbase/breedbase:v0.8
+    depends_on:
+      - breedbase_db
+    container_name: breedbase_avena
+    labels:
+      org.breedbase.type: 'breedbase_web'
+    ports:
+      - 8081:8080
+    volumes:
+      - type: bind
+        source: ./mnt/avena/archive
+        target: /home/production/archive
+      - type: bind
+        source: ./mnt/avena/public
+        target: /home/production/public
+      - type: bind
+        source: ./mnt/avena/submissions
+        target: /home/production/submissions
+      - type: bind
+        source: ./config/avena.conf
+        target: /home/production/cxgn/sgn/sgn_local.conf
+      - type: bind
+        source: ./config/avena.mas
+        target: /home/production/cxgn/avena/mason/instance/properties.mas
+      - type: bind
+        source: ./mnt/blast_databases/avena
+        target: /home/production/cxgn_blast_databases
+  hordeum:
+    image: breedbase/breedbase:v0.8
+    depends_on:
+      - breedbase_db
+    container_name: breedbase_hordeum
+    labels:
+      org.breedbase.type: 'breedbase_web'
+    ports:
+      - 8082:8080
+    volumes:
+      - type: bind
+        source: ./mnt/hordeum/archive
+        target: /home/production/archive
+      - type: bind
+        source: ./mnt/hordeum/public
+        target: /home/production/public
+      - type: bind
+        source: ./mnt/hordeum/submissions
+        target: /home/production/submissions
+      - type: bind
+        source: ./config/hordeum.conf
+        target: /home/production/cxgn/sgn/sgn_local.conf
+      - type: bind
+        source: ./config/hordeum.mas
+        target: /home/production/cxgn/hordeum/mason/instance/properties.mas
+      - type: bind
+        source: ./mnt/blast_databases/hordeum
+        target: /home/production/cxgn_blast_databases
+  breedbase_db:
+    image: breedbase/pg:9
+    container_name: breedbase_db
+    labels:
+      org.breedbase.type: 'breedbase_db'
+    shm_size: '1gb'
+    ports:
+      - 5432:5432
+    volumes:
+      - type: bind
+        source: ./postgresql/data
+        target: /var/lib/postgresql/data
