@@ -1,0 +1,10 @@
+<%once>
+   our $T3_INSTANCE_NAME = "T3/Oat";
+   our $T3_INSTANCE_TYPE = "PRODUCTION";
+   our $T3_INSTANCE_PRIVATE = "PRIVATE";
+   our $T3_PRODUCTION_URL = "https://oat.triticeaetoolbox.org";
+   our $T3_SANDBOX_URL = undef;
+   our $T3_GITHUB_URL = "https://github.com/TriticeaeToolbox/sgn";
+   our $T3_ALERT_TITLE = undef;
+   our $T3_ALERT_DESCRIPTION = undef;
+</%once>
