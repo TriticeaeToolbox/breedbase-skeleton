@@ -2,7 +2,7 @@ version: "3.7"
 
 services:
   triticum:
-    image: breedbase/breedbase:v0.8
+    image: triticeaetoolbox/breedbase_web:latest
     depends_on:
       - breedbase_db
     container_name: breedbase_triticum
@@ -30,7 +30,7 @@ services:
         source: ./mnt/blast_databases/triticum
         target: /home/production/cxgn_blast_databases
   avena:
-    image: breedbase/breedbase:v0.8
+    image: triticeaetoolbox/breedbase_web:latest
     depends_on:
       - breedbase_db
     container_name: breedbase_avena
@@ -58,7 +58,7 @@ services:
         source: ./mnt/blast_databases/avena
         target: /home/production/cxgn_blast_databases
   hordeum:
-    image: breedbase/breedbase:v0.8
+    image: triticeaetoolbox/breedbase_web:latest
     depends_on:
       - breedbase_db
     container_name: breedbase_hordeum
@@ -86,7 +86,7 @@ services:
         source: ./mnt/blast_databases/hordeum
         target: /home/production/cxgn_blast_databases
   breedbase_db:
-    image: breedbase/pg:9
+    image: triticeaetoolbox/breedbase_database:latest
     container_name: breedbase_db
     labels:
       org.breedbase.type: 'breedbase_db'
