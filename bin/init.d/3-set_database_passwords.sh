@@ -9,7 +9,6 @@
 
 BB_HOME="$1"
 BB_CONFIG_DIR="$BB_HOME/config/"
-BB_CONFIGS=("avena.conf" "hordeum.conf" "triticum.conf")
 
 # PSQL location
 PSQL=$(which psql)
@@ -62,8 +61,7 @@ if [ $? -ne 0 ]; then exit 1; fi
 # Update the config files
 echo ""
 echo "==> Updating the web_usr password in the config files..."
-for c in ${BB_CONFIGS[@]}; do
-  config="$BB_CONFIG_DIR/$c"
+for config in "$BB_CONFIG_DIR/"*.conf; do
   echo "... Updating config file [$(basename $config)]..."
   sed -i "s/^dbpass <replace>/dbpass $webusr_pass/g" $config
 done
