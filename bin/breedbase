@@ -7,7 +7,7 @@
 # as well as useful commands for interacting with running containers
 #
 # Author: David Waring <djw64@cornell.edu>
-# Version: 2.0
+# Version: 2.1
 #
 
 
@@ -52,7 +52,7 @@ USAGE=$(cat <<-END
     start [db|triticum|avena|hordeum]   Start the breedbase database container and all defined web containers (or the specified services)
     stop [db|triticum|avena|hordeum]    Stop the breedbase database container and all defined web containers (or the specified services)
     clean                               Stop and remove all of the breedbase containers
-    log  <triticum|avena|hordeum>       Display the breedbase web site error log for the specified web service
+    log  <db|triticum|avena|hordeum>    Display the breedbase web site error log for the specified web service or the database container log
     bash  <triticum|avena|hordeum>      Start bash shell in the web container for the specified web service
     reload  <triticum|avena|hordeum>    Reload the sgn web-app (to incorporate configuration and code changes)
 END
@@ -173,11 +173,16 @@ stop_web() {
 ########
 # LOG
 # Display the SGN error log for the specified web service
+# or the breedbase container log if "db" is specified
 # Arguments:
-#   service - the breedbase web service name
+#   service - the breedbase service name
 ########
 log() {
-    "$DOCKER_COMPOSE" -f "$DOCKER_COMPOSE_FILE" exec "$1" tail -f /var/log/sgn/error.log
+    if [[ "$1" == "db" ]]; then
+        "$DOCKER_COMPOSE" -f "$DOCKER_COMPOSE_FILE" logs -f "$DOCKER_DB_SERVICE"
+    else
+        "$DOCKER_COMPOSE" -f "$DOCKER_COMPOSE_FILE" exec "$1" tail -f /var/log/sgn/error.log
+    fi
 }
 
 
