@@ -54,7 +54,7 @@ echo "$web_update_status"
 for f in "$INIT_SCRIPTS/"*.sh; do
     echo ""
     echo "[$(basename $f)]"
-    if ! bash "$f" "$BB_HOME" -H; then 
+    if ! bash "$f" "$BB_HOME"; then 
         echo "ERROR: Init script failed! [$f]"
         exit 1
     fi
