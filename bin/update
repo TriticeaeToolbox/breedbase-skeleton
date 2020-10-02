@@ -1,0 +1,110 @@
+#! /bin/bash
+
+#
+# T3/BREEDBASE UPDATE SCRIPT
+# This script will pull the latest database and web images from Docker Hub
+# If there is an update to the web image this script will also:
+#   - run all of the latest database patches for each crop
+#   - update the trait ontology for each crop
+# This script can be run with a --force flag to force the running of the update scripts
+# (such as after the initial setup)
+# EXIT CODES:
+#   0 = no update
+#   100 = database image update
+#   200 = website image update
+#   300 = both database and website image update
+#
+
+
+FORCE=0
+if [[ "$1" == "--force" ]]; then
+    FORCE=1
+fi
+
+# Get BB Home Directory
+SOURCE="${BASH_SOURCE[0]}"
+while [ -h "$SOURCE" ]; do # resolve $SOURCE until the file is no longer a symlink
+  DIR="$( cd -P "$( dirname "$SOURCE" )" >/dev/null 2>&1 && pwd )"
+  SOURCE="$(readlink "$SOURCE")"
+  [[ $SOURCE != /* ]] && SOURCE="$DIR/$SOURCE" # if $SOURCE was a relative symlink, we need to resolve it relative to the path where the symlink file was located
+done
+DIR="$( cd -P "$( dirname "$SOURCE" )" >/dev/null 2>&1 && pwd )"
+BB_HOME="$(dirname $DIR)"
+
+
+# Path to Docker binary
+DOCKER="$(which docker)"
+
+# Paths to Breedbase scripts
+BREEDBASE="$BB_HOME/bin/breedbase"
+UPDATE_SCRIPTS="$BB_HOME/bin/update.d/"
+
+# Docker Repositories to Use
+BB_DB_REPO="triticeaetoolbox/breedbase_database"
+BB_WEB_REPO="triticeaetoolbox/breedbase_web"
+
+
+# Exit Code to Return
+EXIT_CODE=0
+
+
+echo "======== T3/BREEDBASE UPDATE SCRIPT ========"
+echo ""
+
+
+#
+# UPDATE DOCKER IMAGES
+#
+
+# Update the Database Image
+echo "==> Updating T3/Breedbase Database Image..."
+db_update=$("$DOCKER" pull "$BB_DB_REPO")
+db_update_status=$(echo "$db_update" | grep ^Status)
+echo "$db_update_status"
+db_updated=1
+if [[ $db_update_status == *"Image is up to date"* ]]; then
+    db_updated=0
+fi
+
+
+# Update the Web Image
+echo "==> Updating T3/Breedbase Web Image..."
+web_update=$("$DOCKER" pull "$BB_WEB_REPO")
+web_update_status=$(echo "$web_update" | grep ^Status)
+echo "$web_update_status"
+web_updated=1
+if [[ $web_update_status == *"Image is up to date"* ]]; then
+    web_updated=0
+fi
+
+
+# Set exit code
+if [ $db_updated -eq 1 ] && [ $web_updated -eq 1 ]; then
+    EXIT_CODE=300
+elif [ $web_updated -eq 1 ]; then
+    EXIT_CODE=200
+elif [ $db_updated -eq 1 ]; then
+    EXIT_CODE=100
+fi
+
+
+#
+# RUN UPDATE SCRIPTS
+#
+if [ $db_updated -eq 1 ] || [ $web_updated -eq 1 ] || [ $FORCE -eq 1 ]; then
+    echo ""
+    echo "==> Running update scripts..."
+    
+    for f in "$UPDATE_SCRIPTS/"*.sh; do
+        echo ""
+        echo "[$(basename $f)]"
+        if ! bash "$f" "$BB_HOME"; then 
+            echo "ERROR: Update script failed! [$f]"
+            exit 1
+        fi
+    done
+fi
+
+
+# Return the Exit code
+exit $EXIT_CODE
