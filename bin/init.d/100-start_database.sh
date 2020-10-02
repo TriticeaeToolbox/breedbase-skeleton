@@ -11,7 +11,6 @@ BREEDBASE="$BB_HOME/bin/breedbase"
 
 
 echo "==> Starting the T3/Breedbase Database..."
-"$BREEDBASE" clean      # Ensure existing containers don't exist
 "$BREEDBASE" start db
 
 echo ""
