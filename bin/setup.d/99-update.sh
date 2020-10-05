@@ -8,6 +8,6 @@
 
 BB_HOME="$1"
 
-"$BB_HOME/bin/update" --force
+"$BB_HOME/bin/update" --setup
 
 exit 0
