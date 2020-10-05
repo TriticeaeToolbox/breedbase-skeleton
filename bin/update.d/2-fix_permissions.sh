@@ -10,20 +10,19 @@ BB_HOME="$1"
 BREEDBASE="$BB_HOME/bin/breedbase"
 DOCKER_COMPOSE_FILE="$BB_HOME/docker-compose.yml"
 
-# Define the names of the web services to process
-WEB_INSTANCES=("avena" "hordeum" "triticum")
-
 # Docker compose location
 DOCKER_COMPOSE=$(which docker-compose)
+DOCKER_DB_SERVICE="breedbase_db"
 
-
+# Get the defined web services
+mapfile -t services <<< $("$DOCKER_COMPOSE" -f "$DOCKER_COMPOSE_FILE" config --services)
 
 # Process each web instance
 echo "==> FIXING PERMISSIONS ON WEB INSTANCES..."
-for instance in ${WEB_INSTANCES[@]}; do
-    echo "... fixing $instance instance"
-
-    cmd="chown -R www-data:www-data /export/prod/tmp/$instance-site/mason"
-
-    "$DOCKER_COMPOSE" -f "$DOCKER_COMPOSE_FILE" exec "$instance" bash -c "$cmd"
+for service in "${services[@]}"; do
+   if [[ "$service" != "$DOCKER_DB_SERVICE" ]]; then
+        echo "... fixing $service instance"
+        cmd="chown -R www-data:www-data /export/prod/tmp/$service-site/mason"
+        "$DOCKER_COMPOSE" -f "$DOCKER_COMPOSE_FILE" exec "$service" bash -c "$cmd"
+    fi
 done

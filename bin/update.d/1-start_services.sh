@@ -11,5 +11,5 @@ BREEDBASE="$BB_HOME/bin/breedbase"
 echo "==> Starting the T3/Breedbase Database and Websites..."
 "$BREEDBASE" start
 
-echo "... waiting ..."
+echo "... waiting for services to start ..."
 sleep 30
