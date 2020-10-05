@@ -7,7 +7,7 @@
 # as well as useful commands for interacting with running containers
 #
 # Author: David Waring <djw64@cornell.edu>
-# Version: 2.1
+# Version: 2.2
 #
 
 
@@ -21,6 +21,9 @@ done
 DIR="$( cd -P "$( dirname "$SOURCE" )" >/dev/null 2>&1 && pwd )"
 BB_HOME="$(dirname $DIR)"
 
+# Paths to helper scripts
+BB_SETUP="$BB_HOME/bin/setup"
+BB_UPDATE="$BB_HOME/bin/update"
 
 # Path to breedbase docker compose file
 DOCKER_COMPOSE_FILE="$BB_HOME/docker-compose.yml"
@@ -55,6 +58,8 @@ USAGE=$(cat <<-END
     log  <db|triticum|avena|hordeum>    Display the breedbase web site error log for the specified web service or the database container log
     bash  <triticum|avena|hordeum>      Start bash shell in the web container for the specified web service
     reload  <triticum|avena|hordeum>    Reload the sgn web-app (to incorporate configuration and code changes)
+    setup                               Download docker images and run initial setup scripts
+    update                              Update docker images and run update scripts
 END
 )
 
@@ -208,6 +213,23 @@ reload() {
 }
 
 
+########
+# SETUP
+# Run the breedbase setup script
+########
+reload() {
+    "$BB_SETUP"
+}
+
+
+########
+# UPDATE
+# Run the breedbase update script
+########
+reload() {
+    "$BB_UPDATE"
+}
+
 
 ####
 ## PARSE COMMAND
@@ -235,6 +257,12 @@ case "$1" in
         ;;
     "reload")
         reload "$arg1"
+        ;;
+    "setup")
+        setup
+        ;;
+    "update")
+        update
         ;;
     *)
         echo "$USAGE"
