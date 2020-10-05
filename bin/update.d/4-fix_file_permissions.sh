@@ -18,7 +18,7 @@ DOCKER_DB_SERVICE="breedbase_db"
 mapfile -t services <<< $("$DOCKER_COMPOSE" -f "$DOCKER_COMPOSE_FILE" config --services)
 
 # Process each web instance
-echo "==> FIXING FILE PERMISSIONS ON WEB INSTANCES..."
+echo "==> Fixing file permissions on the web instances..."
 for service in "${services[@]}"; do
    if [[ "$service" != "$DOCKER_DB_SERVICE" ]]; then
         echo "... fixing $service instance"
