@@ -31,6 +31,13 @@ files stored (directories in this repository will be used to store the postgres 
 git clone https://github.com/TriticeaeToolbox/breedbase.git /path/to/breedbase
 ```
 
+### Remove Unwanted Instances
+
+By default, the `docker-compose.yml` file contains services that will create a separate T3/Breedbase instance 
+for each of the three supported crops.  If you're not interested in running an instance for all of the crops, you 
+can remove (or comment out) the services you will not be using.  This will speed up the setup process if all three 
+instances don't need to be created.
+
 ### Initial Setup
 
 Once you have the project repository cloned, you can use the `breedbase` helper script to run the intial setup script.  This 
