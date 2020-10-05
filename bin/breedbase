@@ -59,7 +59,7 @@ USAGE=$(cat <<-END
     bash  <triticum|avena|hordeum>      Start bash shell in the web container for the specified web service
     reload  <triticum|avena|hordeum>    Reload the sgn web-app (to incorporate configuration and code changes)
     setup                               Download docker images and run initial setup scripts
-    update                              Update docker images and run update scripts
+    update [--force]                    Update docker images and run update scripts (--force will force run the update scripts)
 END
 )
 
@@ -225,9 +225,11 @@ setup() {
 ########
 # UPDATE
 # Run the breedbase update script
+# Arguments:
+#   flag - "--force" will force run the update scripts
 ########
 update() {
-    "$BB_UPDATE"
+    "$BB_UPDATE" "$1"
 }
 
 
@@ -262,7 +264,7 @@ case "$1" in
         setup
         ;;
     "update")
-        update
+        update "$args"
         ;;
     *)
         echo "$USAGE"

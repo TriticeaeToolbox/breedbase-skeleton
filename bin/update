@@ -17,10 +17,21 @@
 
 
 # Flag for starting the update from the setup script
+# skip the docker pulls
+# force running the update scripts
 SETUP=0
 if [[ "$1" == "--setup" ]]; then
     SETUP=1
 fi
+
+# Flag for forcing the update scripts to run
+# perform the docker pulls
+# force running the update scripts
+FORCE=0
+if [[ "$1" == "--force" ]]; then
+    FORCE=1
+fi
+
 
 # Get BB Home Directory
 SOURCE="${BASH_SOURCE[0]}"
@@ -58,7 +69,7 @@ echo ""
 #
 
 # Skip if coming from the setup script...
-if [ $SETUP -ne 1 ]; then
+if [ "$SETUP" -ne 1 ]; then
 
     # Update the Database Image
     echo "==> Updating T3/Breedbase Database Image..."
@@ -85,11 +96,11 @@ fi
 
 
 # Set exit code
-if [ $db_updated -eq 1 ] && [ $web_updated -eq 1 ]; then
+if [[ ("$db_updated" -eq 1) && ("$web_updated" -eq 1) ]]; then
     EXIT_CODE=300
-elif [ $web_updated -eq 1 ]; then
+elif [[ "$web_updated" -eq 1 ]]; then
     EXIT_CODE=200
-elif [ $db_updated -eq 1 ]; then
+elif [[ "$db_updated" -eq 1 ]]; then
     EXIT_CODE=100
 fi
 
@@ -97,7 +108,7 @@ fi
 #
 # RUN UPDATE SCRIPTS
 #
-if [ $db_updated -eq 1 ] || [ $web_updated -eq 1 ] || [ $SETUP -eq 1 ]; then
+if [[ ("$db_updated" -eq 1) || ("$web_updated" -eq 1) || ("$SETUP" -eq 1) || ("$FORCE" -eq 1) ]]; then
     echo ""
     echo "==> Running update scripts..."
     
