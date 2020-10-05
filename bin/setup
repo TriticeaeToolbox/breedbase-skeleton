@@ -1,9 +1,9 @@
 #! /bin/bash
 
 #
-# T3/BREEDBASE INIT SCRIPT
+# T3/BREEDBASE SETUP SCRIPT
 # This script will pull the latest database and web images from Docker Hub
-# It will then process the scripts in the init.d directory for additional setup
+# It will then process the scripts in the setup.d directory for additional setup
 #
 
 
@@ -27,7 +27,7 @@ BB_WEB_REPO="triticeaetoolbox/breedbase_web"
 
 # Paths to Breedbase scripts, files, etc
 BREEDBASE="$BB_HOME/bin/breedbase"
-INIT_SCRIPTS="$BB_HOME/bin/init.d/"
+SETUP_SCRIPTS="$BB_HOME/bin/setup.d/"
 
 
 echo "======== T3/BREEDBASE INITIAL SETUP ========"
@@ -42,20 +42,20 @@ db_update=$("$DOCKER" pull "$BB_DB_REPO")
 db_update_status=$(echo "$db_update" | grep ^Status)
 echo "$db_update_status"
 
-echo "==> Updating T3/Breedbase Web Image..."
+echo "==> Downloading T3/Breedbase Web Image..."
 web_update=$("$DOCKER" pull "$BB_WEB_REPO")
 web_update_status=$(echo "$web_update" | grep ^Status)
 echo "$web_update_status"
 
 
 #
-# RUN INIT SCRIPTS
+# RUN SETUP SCRIPTS
 #
-for f in "$INIT_SCRIPTS/"*.sh; do
+for f in "$SETUP_SCRIPTS/"*.sh; do
     echo ""
     echo "[$(basename $f)]"
     if ! bash "$f" "$BB_HOME"; then 
-        echo "ERROR: Init script failed! [$f]"
+        echo "ERROR: Setup script failed! [$f]"
         exit 1
     fi
 done
