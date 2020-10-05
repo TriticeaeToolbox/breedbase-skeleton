@@ -217,7 +217,7 @@ reload() {
 # SETUP
 # Run the breedbase setup script
 ########
-reload() {
+setup() {
     "$BB_SETUP"
 }
 
@@ -226,7 +226,7 @@ reload() {
 # UPDATE
 # Run the breedbase update script
 ########
-reload() {
+update() {
     "$BB_UPDATE"
 }
 
