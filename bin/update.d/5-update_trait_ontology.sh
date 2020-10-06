@@ -17,6 +17,9 @@ DOCKER_DB_SERVICE="breedbase_db"
 # Get the defined web services
 mapfile -t services <<< $("$DOCKER_COMPOSE" -f "$DOCKER_COMPOSE_FILE" config --services)
 
+# PSQL Location
+PSQL=$(which psql)
+
 
 echo "==> Updating the Trait Ontology..."
 
@@ -42,6 +45,64 @@ for service in "${services[@]}"; do
 perl ./gmod_load_cvterms.pl -H breedbase_db -D cxgn_$service -d Pg -r postgres -p \"$postgres_pass\" -s $obo_s -n $obo_n -uv \"$obo\";
 perl ./gmod_make_cvtermpath.pl -H breedbase_db -D cxgn_$service -d Pg -u postgres -p \"$postgres_pass\" -c $obo_n -v;"
 
+        # Run the Chado scripts
         "$DOCKER_COMPOSE" -f "$DOCKER_COMPOSE_FILE" exec "$service" bash -c "$cmd"
+
+
+        echo "... checking $service for missing CVTypes ontology"
+
+        # Get cvterm id of required term
+        sql="SELECT cvterm_id FROM public.cvterm WHERE cvterm.cv_id = (SELECT cv_id FROM public.cv WHERE cv.name = 'composable_cvtypes') AND cvterm.name = 'trait_ontology';"
+        cvterm_id=$(PGPASSWORD="$postgres_pass" psql -t -h localhost -U postgres -d "cxgn_$service" -c "$sql" | tr -d "[:blank:]")
+
+        # CV is missing...
+        if [[ -z "$cvterm_id" ]]; then
+
+            # SQL to create the ontology
+            sql="INSERT into cv (name) values ('composable_cvtypes');
+INSERT into dbxref (db_id, accession) select db_id, 'trait_ontology' from db where name = 'null';
+INSERT into cvterm (cv_id,name,dbxref_id) select cv_id, 'trait_ontology', dbxref_id from cv join dbxref on true where cv.name = 'composable_cvtypes' and dbxref.accession = 'trait_ontology';
+INSERT into dbxref (db_id, accession) select db_id, 'composed_trait_ontology' from db where name = 'null';
+INSERT into cvterm (cv_id,name,dbxref_id) select cv_id, 'composed_trait_ontology', dbxref_id from cv join dbxref on true where cv.name = 'composable_cvtypes' and dbxref.accession = 'composed_trait_ontology';
+INSERT into dbxref (db_id, accession) select db_id, 'object_ontology' from db where name = 'null';
+INSERT into cvterm (cv_id,name,dbxref_id) select cv_id, 'object_ontology', dbxref_id from cv join dbxref on true where cv.name = 'composable_cvtypes' and dbxref.accession = 'object_ontology';
+INSERT into dbxref (db_id, accession) select db_id, 'attribute_ontology' from db where name = 'null';
+INSERT into cvterm (cv_id,name,dbxref_id) select cv_id, 'attribute_ontology', dbxref_id from cv join dbxref on true where cv.name = 'composable_cvtypes' and dbxref.accession = 'attribute_ontology';
+INSERT into dbxref (db_id, accession) select db_id, 'method_ontology' from db where name = 'null';
+INSERT into cvterm (cv_id,name,dbxref_id) select cv_id, 'method_ontology', dbxref_id from cv join dbxref on true where cv.name = 'composable_cvtypes' and dbxref.accession = 'method_ontology';
+INSERT into dbxref (db_id, accession) select db_id, 'unit_ontology' from db where name = 'null';
+INSERT into cvterm (cv_id,name,dbxref_id) select cv_id, 'unit_ontology', dbxref_id from cv join dbxref on true where cv.name = 'composable_cvtypes' and dbxref.accession = 'unit_ontology';
+INSERT into dbxref (db_id, accession) select db_id, 'time_ontology' from db where name = 'null';
+INSERT into cvterm (cv_id,name,dbxref_id) select cv_id, 'time_ontology', dbxref_id from cv join dbxref on true where cv.name = 'composable_cvtypes' and dbxref.accession = 'time_ontology';"
+
+            # Add the missing ontoloy
+            echo "... adding missing CVTypes ontology to $service"
+            PGPASSWORD="$postgres_pass" psql -t -h localhost -U postgres -d "cxgn_$service" -c "$sql"
+        
+        fi
+
+
+        echo "... checking $service if trait ontology is tagged as 'trait_ontology'"
+
+        # get cv id of trait ontology
+        sql="SELECT cv_id FROM public.cv WHERE cv.name = '$obo_n';"
+        cv_id=$(PGPASSWORD="$postgres_pass" psql -t -h localhost -U postgres -d "cxgn_$service" -c "$sql" | tr -d "[:blank:]")
+
+        # Get cvprop id of tagged trait ontology
+        sql="SELECT cvprop_id FROM public.cvprop WHERE cv_id = '$cv_id' AND type_id = (SELECT cvterm_id FROM public.cvterm WHERE cv_id = (SELECT cv_id FROM public.cv WHERE name = 'composable_cvtypes') AND name = 'trait_ontology');"
+        cvprop_id=$(PGPASSWORD="$postgres_pass" psql -t -h localhost -U postgres -d "cxgn_$service" -c "$sql" | tr -d "[:blank:]")
+
+        # CVProp is missing...
+        if [[ -z "$cvprop_id" ]]; then
+
+            # SQL to add missing cvprop
+            sql="DELETE FROM public.cvprop WHERE type_id = (SELECT cvterm_id FROM public.cvterm WHERE cv_id = (SELECT cv_id FROM public.cv WHERE name = 'composable_cvtypes') AND name = 'trait_ontology');
+INSERT INTO public.cvprop (cv_id, type_id) SELECT cv.cv_id AS cv_id, cvterm.cvterm_id AS type_id FROM public.cv JOIN public.cvterm ON (1=1) WHERE cv.name = '$obo_n' AND cvterm.cvterm_id = (SELECT cvterm_id FROM public.cvterm WHERE cv_id = (SELECT cv_id FROM public.cv WHERE name = 'composable_cvtypes') AND name = 'trait_ontology');"
+
+            # Add the missing cvprop
+            echo "... adding missing CVProp for $service trait ontology"    
+            PGPASSWORD="$postgres_pass" psql -t -h localhost -U postgres -d "cxgn_$service" -c "$sql"
+
+        fi
     fi
 done
