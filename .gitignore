@@ -20,3 +20,5 @@ mnt/triticum/submissions/*
 !mnt/triticum/submissions/.gitkeep
 
 postgresql/data
+
+repos
