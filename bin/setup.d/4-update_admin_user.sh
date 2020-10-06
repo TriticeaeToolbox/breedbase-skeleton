@@ -8,6 +8,7 @@
 
 BB_HOME="$1"
 DOCKER_COMPOSE_FILE="$BB_HOME/docker-compose.yml"
+BB_CONFIG_DIR="$BB_HOME/config/"
 
 # Docker compose location
 DOCKER_COMPOSE=$(which docker-compose)
@@ -58,7 +59,8 @@ for service in "${services[@]}"; do
         sql="UPDATE sgn_people.sp_person SET private_email = '$admin_email', password = sgn.crypt('$admin_pass', sgn.gen_salt('bf')), pending_email = NULL, confirm_code = NULL, cookie_string = NULL WHERE username = 'admin';"
 
         # Update the admin user properties
-        PGPASSWORD="$postgres_pass" psql -h localhost -U postgres -d cxgn_$service -c "$sql"
+        db=$(cat "$BB_CONFIG_DIR/$service.conf" | grep ^dbname | tr -s ' ' | cut -d ' ' -f 2)
+        PGPASSWORD="$postgres_pass" psql -h localhost -U postgres -d $db -c "$sql"
         if [ $? -ne 0 ]; then exit 1; fi
 
     fi

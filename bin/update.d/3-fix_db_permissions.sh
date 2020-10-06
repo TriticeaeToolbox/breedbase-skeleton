@@ -8,6 +8,7 @@
 BB_HOME="$1"
 BREEDBASE="$BB_HOME/bin/breedbase"
 DOCKER_COMPOSE_FILE="$BB_HOME/docker-compose.yml"
+BB_CONFIG_DIR="$BB_HOME/config/"
 
 # SQL to fix Database Permissions
 SQL_URL="https://raw.githubusercontent.com/TriticeaeToolbox/loading-scripts/master/sql/web_usr_grants.sql"
@@ -34,7 +35,10 @@ echo ""
 for service in "${services[@]}"; do
    if [[ "$service" != "$DOCKER_DB_SERVICE" ]]; then
         echo "... fixing $service database"
-        PGPASSWORD="$postgres_pass" psql -h localhost -U postgres -d "cxgn_$service" -c "$SQL"
+
+        # Run web_usr_grants commands
+        db=$(cat "$BB_CONFIG_DIR/$service.conf" | grep ^dbname | tr -s ' ' | cut -d ' ' -f 2)
+        PGPASSWORD="$postgres_pass" psql -h localhost -U postgres -d $db -c "$SQL"
         if [ $? -ne 0 ]; then exit 1; fi
     fi
 done
