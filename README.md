@@ -2,7 +2,7 @@ T3/Breedbase
 ====
 
 This repository contains the project structure, helper scripts, and sample configuration files needed 
-to setup and run instances of T3/Breedbase for each of T3's supported crops (wheat, oat and barley).
+to setup and run instances of T3/Breedbase for each of T3's supported crops (wheat, oat, and barley).
 T3's public instances can be found at the following locations:
 - T3/Wheat - [https://wheat.triticeaetoolbox.org](https://wheat.triticeaetoolbox.org)
 - T3/Oat - [https://oat.triticeaetoolbox.org](https://oat.triticeaetoolbox.org)
@@ -20,7 +20,7 @@ database and another for the website.  In order to install T3/Breedbase you will
 have **[Docker](https://docs.docker.com/get-docker/)** and **[Docker Compose](https://docs.docker.com/compose/install/)** 
 installed.
 
-## Setup
+## Installation
 
 ### Clone Project Repository
 
@@ -37,6 +37,13 @@ By default, the `docker-compose.yml` file contains services that will create a s
 for each of the three supported crops.  If you're not interested in running an instance for all of the crops, you 
 can remove (or comment out) the services you will not be using.  This will speed up the setup process if all three 
 instances don't need to be created.
+
+### File Permissions
+
+If you are using Docker Desktop for macOS, you may first need to give Docker permission to access the directories  
+on the macOS filesystem that are used as the mount points for the Docker containers.  To do this, open Docker Desktop
+and select Preferences => Resources => File Sharing.  Here you can select the `/path/to/breedbase` where you cloned 
+the T3/Breedbase project repository.
 
 ### Initial Setup
 
