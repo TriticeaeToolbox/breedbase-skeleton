@@ -36,7 +36,7 @@ for service in "${services[@]}"; do
         
         # Command(s) to update the trait ontology
         obo_file=$(cat "$BB_CONFIG_DIR/$service.conf" | grep ^trait_ontology_obo_file | tr -s ' ' | cut -d ' ' -f 2)
-        obo_file_path="/home/production/cxgn/sgn/ontology/$obo_file.obo"
+        obo_file_path="/home/production/cxgn/sgn/ontology/$obo_file"
 
         # Get ontology file properties
         obo_s=$("$DOCKER_COMPOSE" -f "$DOCKER_COMPOSE_FILE" exec "$service" bash -c "cat \"$obo_file_path\" | grep ^ontology: | tr -s ' ' | cut -d ' ' -f 2" | tr -d '\r')
@@ -45,7 +45,7 @@ for service in "${services[@]}"; do
         # Build command to run chado scripts
         db=$(cat "$BB_CONFIG_DIR/$service.conf" | grep ^dbname | tr -s ' ' | cut -d ' ' -f 2)
         cmd="cd  /home/production/cxgn/Chado/chado/bin;
-perl ./gmod_load_cvterms.pl -H breedbase_db -D $db -d Pg -r postgres -p \"$postgres_pass\" -s $obo_s -n $obo_n -uv \"$obo\";
+perl ./gmod_load_cvterms.pl -H breedbase_db -D $db -d Pg -r postgres -p \"$postgres_pass\" -s $obo_s -n $obo_n -uv \"$obo_file_path\";
 perl ./gmod_make_cvtermpath.pl -H breedbase_db -D $db -d Pg -u postgres -p \"$postgres_pass\" -c $obo_n -v;"
 
         # Run the Chado scripts
