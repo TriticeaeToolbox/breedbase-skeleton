@@ -1,5 +1,8 @@
 .DS_Store
 
+backups/*
+!backups/.gitkeep
+
 mnt/avena/archive/*
 !mnt/avena/archive/.gitkeep
 mnt/avena/public/*
