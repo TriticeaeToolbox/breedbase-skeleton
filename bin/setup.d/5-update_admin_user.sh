@@ -41,12 +41,6 @@ read -p "New admin email: " admin_email
 echo ""
 
 
-# Get postgres password from user
-read -sp "Postgres password: " postgres_pass
-echo ""
-echo ""
-
-
 # Process each web instance
 for service in "${services[@]}"; do
    if [[ "$service" != "$DOCKER_DB_SERVICE" ]]; then
