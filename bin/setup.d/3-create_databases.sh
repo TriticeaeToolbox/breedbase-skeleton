@@ -31,7 +31,7 @@ for service in "${services[@]}"; do
 
         # Create the Database
         db=$(cat "$BB_CONFIG_DIR/$service.conf" | grep ^dbname | tr -s ' ' | cut -d ' ' -f 2)
-        sql="SELECT 'CREATE DATABASE $db' WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = '$db')\gexec"
+        sql="SELECT 'CREATE DATABASE $db WITH TEMPLATE breedbase' WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = '$db')\gexec"
         cmd="echo \"$sql\" | psql -h localhost -U postgres"
         "$DOCKER_COMPOSE" -f "$DOCKER_COMPOSE_FILE" exec "$DOCKER_DB_SERVICE" bash -c "$cmd"
     fi
