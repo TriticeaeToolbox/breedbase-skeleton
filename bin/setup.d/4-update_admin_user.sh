@@ -17,9 +17,6 @@ DOCKER_DB_SERVICE="breedbase_db"
 # Get the defined web services
 mapfile -t services <<< $("$DOCKER_COMPOSE" -f "$DOCKER_COMPOSE_FILE" config --services)
 
-# PSQL location
-PSQL=$(which psql)
-
 
 echo "==> Updating admin website user..."
 
@@ -55,13 +52,12 @@ for service in "${services[@]}"; do
    if [[ "$service" != "$DOCKER_DB_SERVICE" ]]; then
         echo "... updating $service admin user"
 
-        # Build SQL update
-        sql="UPDATE sgn_people.sp_person SET private_email = '$admin_email', password = sgn.crypt('$admin_pass', sgn.gen_salt('bf')), pending_email = NULL, confirm_code = NULL, cookie_string = NULL WHERE username = 'admin';"
+        # Get the DB Name for the service
+        db=$(cat "$BB_CONFIG_DIR/$service.conf" | grep ^dbname | tr -s ' ' | cut -d ' ' -f 2)
 
         # Update the admin user properties
-        db=$(cat "$BB_CONFIG_DIR/$service.conf" | grep ^dbname | tr -s ' ' | cut -d ' ' -f 2)
-        PGPASSWORD="$postgres_pass" psql -h localhost -U postgres -d $db -c "$sql"
-        if [ $? -ne 0 ]; then exit 1; fi
-
+        sql="UPDATE sgn_people.sp_person SET private_email = '$admin_email', password = sgn.crypt('$admin_pass', sgn.gen_salt('bf')), pending_email = NULL, confirm_code = NULL, cookie_string = NULL WHERE username = 'admin';"
+        cmd="psql -h localhost -U postgres -d $db -c \"$sql\""
+        "$DOCKER_COMPOSE" -f "$DOCKER_COMPOSE_FILE" exec "$DOCKER_DB_SERVICE" bash -c "$cmd"
     fi
 done

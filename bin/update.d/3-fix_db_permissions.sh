@@ -18,8 +18,6 @@ SQL=$(curl -s "$SQL_URL")
 DOCKER_COMPOSE=$(which docker-compose)
 DOCKER_DB_SERVICE="breedbase_db"
 
-# PSQL Location
-PSQL=$(which psql)
 
 # Get the defined web services
 mapfile -t services <<< $("$DOCKER_COMPOSE" -f "$DOCKER_COMPOSE_FILE" config --services)
@@ -27,9 +25,6 @@ mapfile -t services <<< $("$DOCKER_COMPOSE" -f "$DOCKER_COMPOSE_FILE" config --s
 
 echo "==> Setting Database Permissions..."
 
-# Get postgres password from user
-read -sp "Postgres password: " postgres_pass
-echo ""
 
 # Process each web instance
 for service in "${services[@]}"; do
@@ -38,7 +33,7 @@ for service in "${services[@]}"; do
 
         # Run web_usr_grants commands
         db=$(cat "$BB_CONFIG_DIR/$service.conf" | grep ^dbname | tr -s ' ' | cut -d ' ' -f 2)
-        PGPASSWORD="$postgres_pass" psql -h localhost -U postgres -d $db -c "$SQL"
-        if [ $? -ne 0 ]; then exit 1; fi
+        cmd="psql -h localhost -U postgres -d $db -c \"$SQL\""
+        "$DOCKER_COMPOSE" -f "$DOCKER_COMPOSE_FILE" exec "$DOCKER_DB_SERVICE" bash -c "$cmd"
     fi
 done

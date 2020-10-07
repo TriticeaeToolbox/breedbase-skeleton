@@ -9,12 +9,14 @@
 
 BB_HOME="$1"
 BB_CONFIG_DIR="$BB_HOME/config/"
+DOCKER_COMPOSE_FILE="$BB_HOME/docker-compose.yml"
 
-# PSQL location
-PSQL=$(which psql)
+# Docker compose location
+DOCKER_COMPOSE=$(which docker-compose)
+DOCKER_DB_SERVICE="breedbase_db"
 
 # Initial postgres password
-INITIAL_POSTGRES_PASSWORD="${2:-postgres}"
+INITIAL_POSTGRES_PASSWORD="postgres"
 
 
 echo "==> Setting Database Passwords..."
@@ -50,18 +52,20 @@ fi
 # Update the postgres passwords
 echo ""
 echo "==> Updating the web_usr password..."
-PGPASSWORD="$INITIAL_POSTGRES_PASSWORD" psql -h localhost -U postgres -d postgres -c "ALTER USER web_usr WITH PASSWORD '$webusr_pass';"
-if [ $? -ne 0 ]; then exit 1; fi
+sql="ALTER USER web_usr WITH PASSWORD '$webusr_pass';"
+cmd="psql -h localhost -U postgres -d postgres -c \"$sql\""
+"$DOCKER_COMPOSE" -f "$DOCKER_COMPOSE_FILE" exec "$DOCKER_DB_SERVICE" bash -c "$cmd"
 
 echo "==> Updating the postgres password..."
-PGPASSWORD="$INITIAL_POSTGRES_PASSWORD" psql -h localhost -U postgres -d postgres -c "ALTER USER postgres WITH PASSWORD '$postgres_pass';"
-if [ $? -ne 0 ]; then exit 1; fi
+sql="ALTER USER postgres WITH PASSWORD '$postgres_pass';"
+cmd="psql -h localhost -U postgres -d postgres -c \"$sql\""
+"$DOCKER_COMPOSE" -f "$DOCKER_COMPOSE_FILE" exec "$DOCKER_DB_SERVICE" bash -c "$cmd"
 
 
 # Update the config files
 echo ""
 echo "==> Updating the web_usr password in the config files..."
 for config in "$BB_CONFIG_DIR/"*.conf; do
-  echo "... Updating config file [$(basename $config)]..."
-  sed -i "s/^dbpass <replace>/dbpass $webusr_pass/g" $config
+    echo "... Updating config file [$(basename $config)]..."
+    sed -i "s/^dbpass <replace>/dbpass $webusr_pass/g" $config
 done
