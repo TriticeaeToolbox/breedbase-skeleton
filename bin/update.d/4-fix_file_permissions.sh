@@ -26,7 +26,11 @@ for service in "${services[@]}"; do
         
         # Command(s) to run that fix various file permission problems\
         tmp=$(cat "$BB_CONFIG_DIR/$service.conf" | grep ^tempfiles_base | tr -s ' ' | cut -d ' ' -f 2)
-        cmd="chown -R www-data:www-data \"$tmp/mason\""
+        archive=$(cat "$BB_CONFIG_DIR/$service.conf" | grep ^archive_path | tr -s ' ' | cut -d ' ' -f 2)
+        submissions=$(cat "$BB_CONFIG_DIR/$service.conf" | grep ^submission_path | tr -s ' ' | cut -d ' ' -f 2)
+        cmd="chown -R www-data:www-data \"$tmp/mason\";
+chown -R www-data:www-data \"$archive\";
+chown -R www-data:www-data \"$submissions\""
         "$DOCKER_COMPOSE" -f "$DOCKER_COMPOSE_FILE" exec "$service" bash -c "$cmd"
     fi
 done
