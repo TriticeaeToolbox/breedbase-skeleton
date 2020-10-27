@@ -67,5 +67,6 @@ echo ""
 echo "==> Updating the web_usr password in the config files..."
 for config in "$BB_CONFIG_DIR/"*.conf; do
     echo "... Updating config file [$(basename $config)]..."
-    sed -i "s/^dbpass <replace>/dbpass $webusr_pass/g" $config
+    conf=$(sed "s/^dbpass .*/dbpass $webusr_pass     # The password for the database user/g" $config)
+    echo "$conf" > $config
 done
