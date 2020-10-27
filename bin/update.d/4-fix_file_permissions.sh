@@ -16,7 +16,8 @@ DOCKER_COMPOSE=$(which docker-compose)
 DOCKER_DB_SERVICE="breedbase_db"
 
 # Get the defined web services
-mapfile -t services <<< $("$DOCKER_COMPOSE" -f "$DOCKER_COMPOSE_FILE" config --services)
+services=$("$DOCKER_COMPOSE" -f "$DOCKER_COMPOSE_FILE" config --services)
+IFS=$'\n' read -d '' -r -a services <<< "$services"
 
 # Process each web instance
 echo "==> Fixing file permissions on the web instances..."

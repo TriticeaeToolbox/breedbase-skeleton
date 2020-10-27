@@ -20,7 +20,8 @@ DOCKER_DB_SERVICE="breedbase_db"
 
 
 # Get the defined web services
-mapfile -t services <<< $("$DOCKER_COMPOSE" -f "$DOCKER_COMPOSE_FILE" config --services)
+services=$("$DOCKER_COMPOSE" -f "$DOCKER_COMPOSE_FILE" config --services)
+IFS=$'\n' read -d '' -r -a services <<< "$services"
 
 
 echo "==> Setting Database Permissions..."

@@ -18,7 +18,8 @@ DOCKER_DB_SERVICE="breedbase_db"
 
 
 # Get the defined web services
-mapfile -t services <<< $("$DOCKER_COMPOSE" -f "$DOCKER_COMPOSE_FILE" config --services)
+services=$("$DOCKER_COMPOSE" -f "$DOCKER_COMPOSE_FILE" config --services)
+IFS=$'\n' read -d '' -r -a services <<< "$services"
 
 
 echo "==> Creating Initial Databases..."
@@ -26,7 +27,7 @@ echo "==> Creating Initial Databases..."
 
 # Process each web instance
 for service in "${services[@]}"; do
-   if [[ "$service" != "$DOCKER_DB_SERVICE" ]]; then
+    if [[ "$service" != "$DOCKER_DB_SERVICE" ]]; then
         echo "... creating $service database"
 
         # Create the Database
