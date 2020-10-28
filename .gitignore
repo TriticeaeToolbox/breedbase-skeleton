@@ -3,32 +3,16 @@
 backups/*
 !backups/.gitkeep
 
-mnt/avena/archive/*
-!mnt/avena/archive/.gitkeep
-mnt/avena/public/*
-!mnt/avena/public/.gitkeep
-mnt/avena/submissions/*
-!mnt/avena/submissions/.gitkeep
-mnt/avena/tmp/*
-!mnt/avena/tmp/.gitkeep
-
-mnt/hordeum/archive/*
-!mnt/hordeum/archive/.gitkeep
-mnt/hordeum/public/*
-!mnt/hordeum/public/.gitkeep
-mnt/hordeum/submissions/*
-!mnt/hordeum/submissions/.gitkeep
-mnt/hordeum/tmp/*
-!mnt/hordeum/tmp/.gitkeep
-
-mnt/triticum/archive/*
-!mnt/triticum/archive/.gitkeep
-mnt/triticum/public/*
-!mnt/triticum/public/.gitkeep
-mnt/triticum/submissions/*
-!mnt/triticum/submissions/.gitkeep
-mnt/triticum/tmp/*
-!mnt/triticum/tmp/.gitkeep
+mnt/*/archive/*
+!mnt/*/archive/.gitkeep
+mnt/*/public/*
+!mnt/*/public/.gitkeep
+mnt/*/submissions/*
+!mnt/*/submissions/.gitkeep
+mnt/*/tmp/*
+!mnt/*/tmp/.gitkeep
+mnt/blast_databases/*/*
+!mnt/blast_databases/*/.gitkeep
 
 postgresql/data
 
