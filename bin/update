@@ -65,7 +65,7 @@ if [[ "$1" == "--setup" ]]; then
 elif [[ "$1" == "--force" ]]; then
     FORCE=1
 elif [[ ! -z "$1" ]]; then
-    files=$(find "$UPDATE_SCRIPTS" -name "$1*")
+    files=$(find "$UPDATE_SCRIPTS" -name "$1*.sh")
     count=$(echo -n "$files" | grep -c '^')
     if [[ $count -eq 0 ]]; then
         echo "ERROR: no matching script found!"

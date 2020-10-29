@@ -11,8 +11,8 @@ DOCKER_COMPOSE_FILE="$BB_HOME/docker-compose.yml"
 BB_CONFIG_DIR="$BB_HOME/config/"
 
 # SQL to fix Database Permissions
-SQL_URL="https://raw.githubusercontent.com/TriticeaeToolbox/loading-scripts/master/sql/web_usr_grants.sql"
-SQL=$(curl -s "$SQL_URL")
+SQL_FILE="$BB_HOME/bin/update.d/3-web_usr_grants.sql"
+SQL=$(cat "$SQL_FILE")
 
 # Docker compose location
 DOCKER_COMPOSE=$(which docker-compose)

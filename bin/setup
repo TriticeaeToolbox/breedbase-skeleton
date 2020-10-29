@@ -38,7 +38,7 @@ SETUP_SCRIPTS="$BB_HOME/bin/setup.d/"
 
 # Parse the arguments for a specific script
 if [[ ! -z "$1" ]]; then
-    files=$(find "$SETUP_SCRIPTS" -name "$1*")
+    files=$(find "$SETUP_SCRIPTS" -name "$1*.sh")
     count=$(echo -n "$files" | grep -c '^')
     if [[ $count -eq 0 ]]; then
         echo "ERROR: no matching script found!"
