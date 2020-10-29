@@ -26,12 +26,14 @@ for service in "${services[@]}"; do
         echo "... fixing $service instance"
         
         # Command(s) to run that fix various file permission problems\
-        tmp=$(cat "$BB_CONFIG_DIR/$service.conf" | grep ^tempfiles_base | tr -s ' ' | cut -d ' ' -f 2)
-        archive=$(cat "$BB_CONFIG_DIR/$service.conf" | grep ^archive_path | tr -s ' ' | cut -d ' ' -f 2)
-        submissions=$(cat "$BB_CONFIG_DIR/$service.conf" | grep ^submission_path | tr -s ' ' | cut -d ' ' -f 2)
+        tmp=$(cat "$BB_CONFIG_DIR/$service.conf" | grep ^tempfiles_base | tr -s ' ' | xargs | cut -d ' ' -f 2)
+        archive=$(cat "$BB_CONFIG_DIR/$service.conf" | grep ^archive_path | tr -s ' ' | xargs | cut -d ' ' -f 2)
+        submissions=$(cat "$BB_CONFIG_DIR/$service.conf" | grep ^submission_path | tr -s ' ' | xargs | cut -d ' ' -f 2)
+        static_content=$(cat "$BB_CONFIG_DIR/$service.conf" | grep ^static_content_path | tr -s ' ' | xargs | cut -d ' ' -f 2)
         cmd="chown -R www-data:www-data \"$tmp/mason\";
 chown -R www-data:www-data \"$archive\";
-chown -R www-data:www-data \"$submissions\""
+chown -R www-data:www-data \"$submissions\";
+chown -R www-data:www-data \"$static_content/folder\""
         "$DOCKER_COMPOSE" -f "$DOCKER_COMPOSE_FILE" exec "$service" bash -c "$cmd"
     fi
 done
