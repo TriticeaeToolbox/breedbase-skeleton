@@ -7,6 +7,12 @@
 #
 
 
+# Script that is specified to run
+# skip the docker pulls
+# force running the specified script
+SCRIPT=""
+
+
 # Get BB Home Directory
 SOURCE="${BASH_SOURCE[0]}"
 while [ -h "$SOURCE" ]; do # resolve $SOURCE until the file is no longer a symlink
@@ -30,28 +36,51 @@ BREEDBASE="$BB_HOME/bin/breedbase"
 SETUP_SCRIPTS="$BB_HOME/bin/setup.d/"
 
 
+# Parse the arguments for a specific script
+if [[ ! -z "$1" ]]; then
+    files=$(find "$SETUP_SCRIPTS" -name "$1*")
+    count=$(echo -n "$files" | grep -c '^')
+    if [[ $count -eq 0 ]]; then
+        echo "ERROR: no matching script found!"
+        exit 1
+    elif [[ $count -gt 1 ]]; then
+        echo "ERROR: multiple matching scripts found!"
+        exit 1
+    else
+        SCRIPT=$(basename "$files")
+    fi
+fi
+
+
 echo "======== T3/BREEDBASE INITIAL SETUP ========"
 
 
 #
 # DOWNLOAD DOCKER IMAGES
 #
-echo ""
-echo "==> Downloading T3/Breedbase Database Image..."
-db_update=$("$DOCKER" pull "$BB_DB_REPO")
-db_update_status=$(echo "$db_update" | grep ^Status)
-echo "$db_update_status"
+if [ -z "$SCRIPT" ]; then
+    echo ""
+    echo "==> Downloading T3/Breedbase Database Image..."
+    db_update=$("$DOCKER" pull "$BB_DB_REPO")
+    db_update_status=$(echo "$db_update" | grep ^Status)
+    echo "$db_update_status"
 
-echo "==> Downloading T3/Breedbase Web Image..."
-web_update=$("$DOCKER" pull "$BB_WEB_REPO")
-web_update_status=$(echo "$web_update" | grep ^Status)
-echo "$web_update_status"
+    echo "==> Downloading T3/Breedbase Web Image..."
+    web_update=$("$DOCKER" pull "$BB_WEB_REPO")
+    web_update_status=$(echo "$web_update" | grep ^Status)
+    echo "$web_update_status"
+fi
 
 
 #
 # RUN SETUP SCRIPTS
 #
-for f in "$SETUP_SCRIPTS/"*.sh; do
+if [ -z "$SCRIPT" ]; then
+    scripts="*.sh"
+else
+    scripts="$SCRIPT"
+fi
+for f in "$SETUP_SCRIPTS"/$scripts; do
     echo ""
     echo "[$(basename $f)]"
     if ! bash "$f" "$BB_HOME"; then 
@@ -64,14 +93,16 @@ done
 #
 # DISPLAY BASIC HELP INFO
 # 
-echo ""
-echo "======== INTIAL T3/BREEDBASE SETUP COMPLETE ========"
-echo "To start/stop the services use the 'breedbase' script located at:"
-echo "$BREEDBASE"
-echo "Examples:"
-echo "breedbase start - starts all services (database and all web instances)"
-echo "breedbase start db triticum - starts specified services (database and wheat instance)"
-echo "breedbase stop - stops all services"
-echo "breedbase stop triticum - stops the specified services (wheat instance)"
-echo ""
-echo "Refer to the README.md document for more information on configuration options."
+if [ -z "$SCRIPT" ]; then
+    echo ""
+    echo "======== INTIAL T3/BREEDBASE SETUP COMPLETE ========"
+    echo "To start/stop the services use the 'breedbase' script located at:"
+    echo "$BREEDBASE"
+    echo "Examples:"
+    echo "breedbase start - starts all services (database and all web instances)"
+    echo "breedbase start db triticum - starts specified services (database and wheat instance)"
+    echo "breedbase stop - stops all services"
+    echo "breedbase stop triticum - stops the specified services (wheat instance)"
+    echo ""
+    echo "Refer to the README.md document for more information on configuration options."
+fi

@@ -20,17 +20,16 @@
 # skip the docker pulls
 # force running the update scripts
 SETUP=0
-if [[ "$1" == "--setup" ]]; then
-    SETUP=1
-fi
 
 # Flag for forcing the update scripts to run
 # perform the docker pulls
 # force running the update scripts
 FORCE=0
-if [[ "$1" == "--force" ]]; then
-    FORCE=1
-fi
+
+# Script that is specified to run
+# skip the docker pulls
+# force running the specified script
+SCRIPT=""
 
 
 # Get BB Home Directory
@@ -60,8 +59,30 @@ BB_WEB_REPO="triticeaetoolbox/breedbase_web"
 EXIT_CODE=0
 
 
+# Parse the first argument for the flags or script to run
+if [[ "$1" == "--setup" ]]; then
+    SETUP=1
+elif [[ "$1" == "--force" ]]; then
+    FORCE=1
+elif [[ ! -z "$1" ]]; then
+    files=$(find "$UPDATE_SCRIPTS" -name "$1*")
+    count=$(echo -n "$files" | grep -c '^')
+    if [[ $count -eq 0 ]]; then
+        echo "ERROR: no matching script found!"
+        exit 1
+    elif [[ $count -gt 1 ]]; then
+        echo "ERROR: multiple matching scripts found!"
+        exit 1
+    else
+        SCRIPT=$(basename "$files")
+    fi
+fi
+
+
+
 echo "======== T3/BREEDBASE UPDATE SCRIPT ========"
 echo ""
+
 
 
 #
@@ -69,7 +90,7 @@ echo ""
 #
 
 # Skip if coming from the setup script...
-if [ "$SETUP" -ne 1 ]; then
+if [ "$SETUP" -ne 1 ] && [ -z "$SCRIPT" ]; then
 
     # Update the Database Image
     echo "==> Updating T3/Breedbase Database Image..."
@@ -108,11 +129,17 @@ fi
 #
 # RUN UPDATE SCRIPTS
 #
-if [[ ("$db_updated" -eq 1) || ("$web_updated" -eq 1) || ("$SETUP" -eq 1) || ("$FORCE" -eq 1) ]]; then
+if [[ ("$db_updated" -eq 1) || ("$web_updated" -eq 1) || ("$SETUP" -eq 1) || ("$FORCE" -eq 1) || (! -z "$SCRIPT") ]]; then
     echo ""
     echo "==> Running update scripts..."
+
+    if [ -z "$SCRIPT" ]; then
+        scripts="*.sh"
+    else
+        scripts="$SCRIPT"
+    fi
     
-    for f in "$UPDATE_SCRIPTS/"*.sh; do
+    for f in "$UPDATE_SCRIPTS"/$scripts; do
         echo ""
         echo "[$(basename $f)]"
         if ! bash "$f" "$BB_HOME"; then 

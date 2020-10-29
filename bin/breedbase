@@ -218,7 +218,7 @@ reload() {
 # Run the breedbase setup script
 ########
 setup() {
-    "$BB_SETUP"
+    "$BB_SETUP" "$1"
 }
 
 
@@ -261,7 +261,7 @@ case "$1" in
         reload "$arg1"
         ;;
     "setup")
-        setup
+        setup "$args"
         ;;
     "update")
         update "$args"
