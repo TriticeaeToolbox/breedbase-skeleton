@@ -7,7 +7,7 @@
 # as well as useful commands for interacting with running containers
 #
 # Author: David Waring <djw64@cornell.edu>
-# Version: 2.2
+# Version: 2.3
 #
 
 
@@ -24,6 +24,7 @@ BB_HOME="$(dirname $DIR)"
 # Paths to helper scripts
 BB_SETUP="$BB_HOME/bin/setup"
 BB_UPDATE="$BB_HOME/bin/update"
+BB_UTILS="$BB_HOME/bin/utils"
 
 # Path to breedbase docker compose file
 DOCKER_COMPOSE_FILE="$BB_HOME/docker-compose.yml"
@@ -55,11 +56,14 @@ USAGE=$(cat <<-END
     start [db|triticum|avena|hordeum]   Start the breedbase database container and all defined web containers (or the specified services)
     stop [db|triticum|avena|hordeum]    Stop the breedbase database container and all defined web containers (or the specified services)
     clean                               Stop and remove all of the breedbase containers
-    log  <db|triticum|avena|hordeum>    Display the breedbase web site error log for the specified web service or the database container log
-    bash  <triticum|avena|hordeum>      Start bash shell in the web container for the specified web service
-    reload  <triticum|avena|hordeum>    Reload the sgn web-app (to incorporate configuration and code changes)
-    setup                               Download docker images and run initial setup scripts
-    update [--force]                    Update docker images and run update scripts (--force will force run the update scripts)
+    log <db|triticum|avena|hordeum>     Display the breedbase web site error log for the specified web service or the database container log
+    bash <db|triticum|avena|hordeum>    Start bash shell in the web container for the specified web or database service
+    reload <triticum|avena|hordeum>     Reload the sgn web-app (to incorporate configuration and code changes)
+    setup [script]                      Download docker images and run initial setup scripts
+                                            when script is specified, the matching setup script will run
+    update [--force|step]               Update docker images and run update scripts
+                                            --force will force run all of the update scripts
+                                            when script is specified, the matching update script will run
 END
 )
 
@@ -186,7 +190,13 @@ log() {
     if [[ "$1" == "db" ]]; then
         "$DOCKER_COMPOSE" -f "$DOCKER_COMPOSE_FILE" logs -f "$DOCKER_DB_SERVICE"
     else
-        "$DOCKER_COMPOSE" -f "$DOCKER_COMPOSE_FILE" exec "$1" tail -f /var/log/sgn/error.log
+        container=breedbase_"$1"
+        container_hash=$("$DOCKER" ps -q -f name="$container")
+        if [ ! -z $container_hash ]; then
+            "$DOCKER" exec "$container" tail -f /var/log/sgn/error.log
+        else
+            "$DOCKER_COMPOSE" -f "$DOCKER_COMPOSE_FILE" exec "$1" tail -f /var/log/sgn/error.log
+        fi
     fi
 }
 
@@ -198,7 +208,17 @@ log() {
 #   service - the breedbase web service name
 ########
 bash() {
-    "$DOCKER_COMPOSE" -f "$DOCKER_COMPOSE_FILE" exec "$1" bash
+    if [[ "$1" == "db" ]]; then
+        "$DOCKER_COMPOSE" -f "$DOCKER_COMPOSE_FILE" exec "$DOCKER_DB_SERVICE" bash
+    else
+        container=breedbase_"$1"
+        container_hash=$("$DOCKER" ps -q -f name="$container")
+        if [ ! -z $container_hash ]; then
+            "$DOCKER" exec -it "$container" bash
+        else
+            "$DOCKER_COMPOSE" -f "$DOCKER_COMPOSE_FILE" exec "$1" bash
+        fi
+    fi
 }
 
 
@@ -230,6 +250,18 @@ setup() {
 ########
 update() {
     "$BB_UPDATE" "$1"
+}
+
+
+########
+# UTILS
+# Run the specified utility script with the passed arguments
+# Arguments:
+#   util - the name of the utility script
+#   ... - additional arguments passed to the utility script
+########
+utils() {
+    "$BB_UTILS" "$1" "${@:2}"
 }
 
 
@@ -265,6 +297,9 @@ case "$1" in
         ;;
     "update")
         update "$args"
+        ;;
+    "dev")
+        utils dev "$args"
         ;;
     *)
         echo "$USAGE"

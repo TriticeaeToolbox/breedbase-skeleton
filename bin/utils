@@ -1,0 +1,46 @@
+#! /bin/bash
+
+#
+# T3/BREEDBASE UTILS SCRIPT
+# This script will start the specified utility script with the passed arguments
+#
+
+
+# Get BB Home Directory
+SOURCE="${BASH_SOURCE[0]}"
+while [ -h "$SOURCE" ]; do # resolve $SOURCE until the file is no longer a symlink
+  DIR="$( cd -P "$( dirname "$SOURCE" )" >/dev/null 2>&1 && pwd )"
+  SOURCE="$(readlink "$SOURCE")"
+  [[ $SOURCE != /* ]] && SOURCE="$DIR/$SOURCE" # if $SOURCE was a relative symlink, we need to resolve it relative to the path where the symlink file was located
+done
+DIR="$( cd -P "$( dirname "$SOURCE" )" >/dev/null 2>&1 && pwd )"
+BB_HOME="$(dirname $DIR)"
+
+# Path to Utils Directory
+BB_UTILS="$BB_HOME"/bin/utils.d
+
+
+# Parse the arguments
+SCRIPT="$1"
+ARGS="${@:2}"
+if [ -z "$SCRIPT" ]; then
+    echo "ERROR: The name of the utility script must be specified!"
+    exit 1
+fi
+
+# Find matching script
+files=$(find "$BB_UTILS" -name "$SCRIPT*.sh")
+count=$(echo -n "$files" | grep -c '^')
+if [[ $count -eq 0 ]]; then
+    echo "ERROR: no matching script found!"
+    exit 1
+elif [[ $count -gt 1 ]]; then
+    echo "ERROR: multiple matching scripts found!"
+    exit 1
+else
+    SCRIPT="$files"
+fi
+
+
+# Call the script
+$(which bash) "$SCRIPT" "$BB_HOME" $ARGS
