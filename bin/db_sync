@@ -1,0 +1,182 @@
+#! /bin/bash
+
+#
+# DB SYNC
+# =======
+# A utility script to sync a specified source database to a specified target database.  
+# NOTE: This will exclude the sgn_people schema from the transfer (ie the target 
+# database will have it's own data for these tables)
+#
+# Author: David Waring <djw64@cornell.edu>
+#
+
+# postgres bin locations
+PSQL="/usr/bin/psql"
+PG_DUMP="/usr/bin/pg_dump"
+CREATEDB="/usr/bin/createdb"
+
+# Breedbase bin location
+BB="/opt/breedbase/bin/breedbase"
+BB_USER="breedbase"
+
+# Script Defaults
+OUTPUT_DIR="/opt/breedbase/backups"
+DEFAULT_PG_SOURCE_HOST="localhost"
+DEFAULT_PG_SOURCE_PORT="5432"
+DEFAULT_PG_SOURCE_USER="postgres"
+DEFAULT_PG_TARGET_HOST="localhost"
+DEFAULT_PG_TARGET_PORT="5432"
+DEFAULT_PG_TARGET_USER="postgres"
+
+
+####
+## USAGE
+####
+
+USAGE=$(cat <<-END
+  DATABASE SYNC UTILITY
+  ---------------------
+  Usage: $0 -s <database> -t <database> [-w <instance>]
+            [-h <source host>] [-p <source port>] [-u <source username>]
+            [-H <target host>] [-P <target port>] [-U <target username>]
+
+  Options:
+    -s <database>       The name of the source postgres database
+    -t <database>       The name of the target postgres database
+    -w <instance>       The instance name of the docker breedbase web container that is
+                        using the target database (ie triticum, triticum_sandbox, etc).  
+                        If provided, the web container will be stopped while the temporary 
+                        database replaces the target database. (optional)
+    -h|H <host>         The postgres database host (optional)
+                        Source Default: $DEFAULT_PG_SOURCE_HOST
+                        Target Default: $DEFAULT_PG_TARGET_HOST
+    -p|P <port>         The postgres database port (optional)
+                        Source Default: $DEFAULT_PG_SOURCE_PORT
+                        Target Default: $DEFAULT_PG_TARGET_PORT
+    -u|U <username>     The postgres username (optional)
+                        Source Default: $DEFAULT_PG_SOURCE_USER
+                        Target Default: $DEFAULT_PG_TARGET_USER
+END
+)
+
+
+
+####
+## PARSE OPTIONS
+####
+
+SOURCE=""
+TARGET=""
+INSTANCE=""
+PG_SOURCE_HOST="$DEFAULT_PG_SOURCE_HOST"
+PG_SOURCE_PORT="$DEFAULT_PG_SOURCE_PORT"
+PG_SOURCE_USER="$DEFAULT_PG_SOURCE_USER"
+PG_TARGET_HOST="$DEFAULT_PG_TARGET_HOST"
+PG_TARGET_PORT="$DEFAULT_PG_TARGET_PORT"
+PG_TARGET_USER="$DEFAULT_PG_TARGET_USER"
+
+OPTIND=1
+while getopts "s:t:w:h:H:p:P:u:U:" opt; do
+    case "$opt" in
+        s)
+            SOURCE="$OPTARG"
+            ;;
+        t)
+            TARGET="$OPTARG"
+            ;;
+        w)
+            INSTANCE="$OPTARG"
+            ;;
+        h)
+            PG_SOURCE_HOST="$OPTARG"
+            ;;
+        p)
+            PG_SOURCE_PORT="$OPTARG"
+            ;;
+        u)
+            PG_SOURCE_USER="$OPTARG"
+            ;;
+        H)
+            PG_TARGET_HOST="$OPTARG"
+            ;;
+        P)
+            PG_TARGET_PORT="$OPTARG"
+            ;;
+        U)
+            PG_TARGET_USER="$OPTARG"
+            ;;
+        *)
+            echo "$USAGE"
+            exit 1
+            ;;
+    esac
+done
+shift "$((OPTIND-1))"
+
+
+
+####
+## SYNC
+####
+
+
+# Check required parameters
+if [ -z "$SOURCE" ]; then
+    echo "ERROR: Source database not specified"
+    echo "$USAGE"
+    exit 1
+elif [ -z "$TARGET" ]; then
+    echo "ERROR: Target database not specified"
+    echo "$USAGE"
+    exit 1
+fi
+
+# Set temp database and log file
+date=`date +"%Y%m%d_%H%M"`
+TEMP="sync_$date"
+LOG="$OUTPUT_DIR"/sync.$date."$SOURCE"."$TARGET".log
+
+
+
+# Perform Sync
+echo "Syncing source database $SOURCE [$PG_SOURCE_HOST] --> target database $TARGET [$PG_TARGET_HOST]..." | tee -a "$LOG"
+
+# Create temp database
+echo "...Creating Temporary DB $TEMP [$PG_TARGET_HOST]" | tee -a "$LOG"
+"$CREATEDB" -h "$PG_TARGET_HOST" -p "$PG_TARGET_PORT" -U "$PG_TARGET_USER" "$TEMP" >> "$LOG" 2>&1
+
+# Backup source database
+echo "...Backing up Source DB $SOURCE [$PG_SOURCE_HOST] to Temporary DB $TEMP [$PG_TARGET_HOST]" | tee -a "$LOG"
+"$PG_DUMP" -h "$PG_SOURCE_HOST" -p "$PG_SOURCE_PORT" -U "$PG_SOURCE_USER" -N sgn_people "$SOURCE" | "$PSQL" -h "$PG_TARGET_HOST" -p "$PG_TARGET_PORT" -U "$PG_TARGET_USER" "$TEMP" >> "$LOG" 2>&1
+
+# Backup target sgn_people schema
+echo "...Backing up Target DB $TARGET/sgn_people [$PG_TARGET_HOST] to Temporary DB $TEMP [$PG_TARGET_HOST]" | tee -a "$LOG"
+"$PG_DUMP" -h "$PG_TARGET_HOST" -p "$PG_TARGET_PORT" -U "$PG_TARGET_USER" -n sgn_people "$TARGET" | "$PSQL" -h "$PG_TARGET_HOST" -p "$PG_TARGET_PORT" -U "$PG_TARGET_USER" "$TEMP" >> "$LOG" 2>&1
+
+
+# Stop Web Container
+if [ ! -z "$INSTANCE" ]; then
+    echo "...Stopping Web Container $INSTANCE" | tee -a "$LOG"
+    "$BB" stop "$INSTANCE" >> "$LOG" 2>&1
+fi
+
+
+# Drop target database
+echo "...Dropping Target DB $TARGET [$PG_TARGET_HOST]" | tee -a "$LOG"
+"$PSQL" -h "$PG_TARGET_HOST" -p "$PG_TARGET_PORT" -U "$PG_TARGET_USER" -c "DROP DATABASE $TARGET;" >> "$LOG" 2>&1
+
+# Rename temp database
+echo "...Renaming Temporary DB $TEMP to $TARGET [$PG_TARGET_HOST]" | tee -a "$LOG"
+"$PSQL" -h "$PG_TARGET_HOST" -p "$PG_TARGET_PORT" -U "$PG_TARGET_USER" -c "ALTER DATABASE $TEMP RENAME TO $TARGET;" >> "$LOG" 2>&1
+
+# Refresh Mat Views
+echo "...Refreshing the Materialized Views [$PG_TARGET_HOST]" | tee -a "$LOG"
+"$PSQL" -h "$PG_TARGET_HOST" -p "$PG_TARGET_PORT" -U "$PG_TARGET_USER" -d "$TARGET" -c "SELECT public.refresh_materialized_views();" >> "$LOG" 2>&1
+"$PSQL" -h "$PG_TARGET_HOST" -p "$PG_TARGET_PORT" -U "$PG_TARGET_USER" -d "$TARGET" -c "SELECT public.refresh_materialized_stockprop();" >> "$LOG" 2>&1
+
+
+# Start Web Container
+if [ ! -z "$INSTANCE" ]; then
+    echo "...Start Web Container $INSTANCE" | tee -a "$LOG"
+    "$BB" start "$INSTANCE" >> "$LOG" 2>&1
+fi
