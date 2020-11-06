@@ -1,7 +1,14 @@
 .DS_Store
+.bash_history
+.pgpass
+.config
+.ssh
 
 backups/*
 !backups/.gitkeep
+
+config/dev*.conf
+config/dev*.mas
 
 mnt/*/archive/*
 !mnt/*/archive/.gitkeep
