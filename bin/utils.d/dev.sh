@@ -40,33 +40,51 @@ MASON_BRANCH="$TEMPLATE"
 MASON_DIR=${5:-"$BB_HOME"/repos/mason}
 
 
-# Ensure the new image and container do not exist
+# Check if the dev container already exists
 container_hash=$("$DOCKER" ps -a -q -f name="$DEV_NAME")
 if [ ! -z $container_hash ]; then
-    echo "ERROR: Dev container ($DEV_NAME) already exists"
-    read -p "Do you want to remove the existing container? " -r
+    echo "WARNING: Dev container ($DEV_NAME) already exists"
+    read -p "Do you want to use the existing container? " -r
     if [[ $REPLY =~ ^[Yy][Ee]?[Ss]?$ ]]; then
+        "$DOCKER" start "$DEV_NAME"
+        exit 0
+    else
         "$DOCKER" stop "$DEV_NAME"
         "$DOCKER" container rm "$DEV_NAME"
-    else
-        exit 1
     fi
 fi
+
+# Check if the dev image already exists
 image_hash=$("$DOCKER" images -q "$DEV_NAME")
 if [ ! -z $image_hash ]; then
-    echo "ERROR: Dev image ($DEV_NAME) already exists"
+    echo "WARNING: Dev image ($DEV_NAME) already exists"
     read -p "Do you want to remove the existing image? " -r
     if [[ $REPLY =~ ^[Yy][Ee]?[Ss]?$ ]]; then
         "$DOCKER" image rm "$DEV_NAME"
-    else
+        image_hash=""
+    fi
+fi
+
+# Create the image, if it does not exist
+if [ -z $image_hash ]; then
+
+    # Ensure the specified template service is created
+    template_hash=$("$DOCKER_COMPOSE" -f "$DOCKER_COMPOSE_FILE" ps -q "$TEMPLATE")
+    if [ $? -eq 1 ]; then
+        echo "ERROR: Template service does not exist"
         exit 1
     fi
+
+    # Duplicate the container
+    echo "Duplicating $TEMPLATE container to $DEV_NAME image..."
+    "$DOCKER" commit "$template_hash" "$DEV_NAME"
+
 fi
 
 
 # Ensure the dev repos exist
 if [ ! -d "$SGN_DIR" ]; then
-    echo "ERROR: SGN repo ($SGN_DIR) does not exist"
+    echo "WARNING: SGN repo ($SGN_DIR) does not exist"
     read -p "Do you want to clone the sgn repo ($SGN_REPO [$SGN_BRANCH])? " -r
     if [[ $REPLY =~ ^[Yy][Ee]?[Ss]?$ ]]; then
         mkdir -p "$SGN_DIR"
@@ -76,7 +94,7 @@ if [ ! -d "$SGN_DIR" ]; then
     fi
 fi
 if [ ! -d "$MASON_DIR" ]; then
-    echo "ERROR: mason repo ($MASON_DIR) does not exist"
+    echo "WARNING: mason repo ($MASON_DIR) does not exist"
     read -p "Do you want to clone the mason repo ($MASON_REPO [$MASON_BRANCH])? " -r
     if [[ $REPLY =~ ^[Yy][Ee]?[Ss]?$ ]]; then
         mkdir -p "$MASON_DIR"
@@ -89,7 +107,7 @@ fi
 
 # Copy the template config files
 if [ -f "$DEV_SGN_CONF" ]; then
-    echo "ERROR: the sgn conf file ($DEV_SGN_CONF) already exists"
+    echo "WARNING: the sgn conf file ($DEV_SGN_CONF) already exists"
     read -p "Do you want to replace the file? " -r
     if [[ $REPLY =~ ^[Yy][Ee]?[Ss]?$ ]]; then
         rm "$DEV_SGN_CONF"
@@ -98,8 +116,9 @@ if [ -f "$DEV_SGN_CONF" ]; then
 else
     cp "$TEMPLATE_SGN_CONF" "$DEV_SGN_CONF"
 fi
+
 if [ -f "$DEV_MASON_CONF" ]; then
-    echo "ERROR: the mason conf file ($DEV_MASON_CONF) already exists"
+    echo "WARNING: the mason conf file ($DEV_MASON_CONF) already exists"
     read -p "Do you want to replace the file? " -r
     if [[ $REPLY =~ ^[Yy][Ee]?[Ss]?$ ]]; then
         rm "$DEV_MASON_CONF"
@@ -109,19 +128,6 @@ else
     cp "$TEMPLATE_MASON_CONF" "$DEV_MASON_CONF"
 fi
 
-
-# Ensure the specified template service is created
-template_hash=$("$DOCKER_COMPOSE" -f "$DOCKER_COMPOSE_FILE" ps -q "$TEMPLATE")
-if [ $? -eq 1 ]; then
-    echo "ERROR: Template service does not exist"
-    exit 1
-fi
-
-
-
-# Duplicate the container
-echo "Duplicating $TEMPLATE container to $DEV_NAME image..."
-"$DOCKER" commit "$template_hash" "$DEV_NAME"
 
 # Run the image
 echo "Building and starting $DEV_NAME container..."

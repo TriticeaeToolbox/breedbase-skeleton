@@ -229,7 +229,13 @@ bash() {
 #   service - the breedbase web service name
 ########
 reload() {
-    "$DOCKER_COMPOSE" -f "$DOCKER_COMPOSE_FILE" exec "$1" bash -c 'kill -SIGHUP $(cat /tmp/sgn.pid)'
+    container=breedbase_"$1"
+    container_hash=$("$DOCKER" ps -q -f name="$container")
+    if [ ! -z $container_hash ]; then
+        "$DOCKER" exec "$container" bash -c 'kill -SIGHUP $(cat /tmp/sgn.pid)'
+    else
+        "$DOCKER_COMPOSE" -f "$DOCKER_COMPOSE_FILE" exec "$1" bash -c 'kill -SIGHUP $(cat /tmp/sgn.pid)'
+    fi
 }
 
 
