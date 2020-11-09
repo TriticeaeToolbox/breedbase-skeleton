@@ -7,7 +7,7 @@
 # as well as useful commands for interacting with running containers
 #
 # Author: David Waring <djw64@cornell.edu>
-# Version: 2.3
+# Version: 2.4
 #
 
 
@@ -52,18 +52,23 @@ USAGE=$(cat <<-END
   Usage: $0 <command> [arguments]
 
   Commands:
-    status                              Get the status of the breedbase database and web containers
-    start [db|triticum|avena|hordeum]   Start the breedbase database container and all defined web containers (or the specified services)
-    stop [db|triticum|avena|hordeum]    Stop the breedbase database container and all defined web containers (or the specified services)
-    clean                               Stop and remove all of the breedbase containers
-    log <db|triticum|avena|hordeum>     Display the breedbase web site error log for the specified web service or the database container log
-    bash <db|triticum|avena|hordeum>    Start bash shell in the web container for the specified web or database service
-    reload <triticum|avena|hordeum>     Reload the sgn web-app (to incorporate configuration and code changes)
-    setup [script]                      Download docker images and run initial setup scripts
-                                            when script is specified, the matching setup script will run
-    update [--force|step]               Update docker images and run update scripts
-                                            --force will force run all of the update scripts
-                                            when script is specified, the matching update script will run
+    status                                  Get the status of the breedbase database and web containers
+    start [db|triticum|avena|hordeum|...]   Start the breedbase database container and all defined web containers (or the specified services)
+    stop [db|triticum|avena|hordeum|...]    Stop the breedbase database container and all defined web containers (or the specified services)
+    clean                                   Stop and remove all of the breedbase containers
+    log <db|triticum|avena|hordeum|...>     Display the breedbase web site error log for the specified web service or the database container log
+    bash <db|triticum|avena|hordeum|...>    Start bash shell in the web container for the specified web or database service
+    reload <triticum|avena|hordeum|...>     Reload the sgn web-app (to incorporate configuration and code changes)
+    setup [script]                          Download docker images and run initial setup scripts
+                                                when script is specified, the matching setup script will run
+    update [--force|step]                   Update docker images and run update scripts
+                                                --force will force run all of the update scripts
+                                                when script is specified, the matching update script will run
+
+  Utilities:
+    confirm <triticum|avena|hordeum|...> <user>     Confirm the account of the user on the specified service
+                                                        The user can be specified by username or email
+    patch <triticum|avena|hordeum|...> <patch>      Run the specified DB patch on the database of the specified service 
 END
 )
 
@@ -281,10 +286,10 @@ case "$1" in
         status
         ;;
     "start")
-        start "$args"
+        start $args
         ;;
     "stop")
-        stop "$args"
+        stop $args
         ;;
     "clean")
         clean
@@ -299,13 +304,19 @@ case "$1" in
         reload "$arg1"
         ;;
     "setup")
-        setup "$args"
+        setup $args
         ;;
     "update")
-        update "$args"
+        update $args
+        ;;
+    "confirm")
+        utils confirm $DOCKER_DB_SERVICE $args
+        ;;
+    "patch")
+        utils patch $args
         ;;
     "dev")
-        utils dev "$args"
+        utils dev $args
         ;;
     *)
         echo "$USAGE"
