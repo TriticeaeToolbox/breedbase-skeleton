@@ -75,5 +75,5 @@ while IFS= read -r patch; do
     name=$(basename "$patch" .pm)
     echo "...running $name patch"
     cmd="cd \"$patch_dir\"; echo -ne \"postgres\n$postgres_pass\" | mx-run $name -F -H breedbase_db -D \"$db\" -u admin"
-    "$DOCKER" exec -it "$CONTAINER" bash -c "$cmd"
+    "$DOCKER" exec -t "$CONTAINER" bash -c "$cmd"
 done <<< "$patches"
