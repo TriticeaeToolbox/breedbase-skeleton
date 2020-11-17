@@ -1,6 +1,7 @@
 version: "3.7"
 
 services:
+  # start triticum
   triticum:
     image: triticeaetoolbox/breedbase_web:latest
     depends_on:
@@ -29,6 +30,8 @@ services:
       - type: bind
         source: ./mnt/blast_databases/triticum
         target: /home/production/cxgn_blast_databases
+  # end triticum
+  # start avena
   avena:
     image: triticeaetoolbox/breedbase_web:latest
     depends_on:
@@ -57,6 +60,8 @@ services:
       - type: bind
         source: ./mnt/blast_databases/avena
         target: /home/production/cxgn_blast_databases
+  # end avena
+  # start hordeum
   hordeum:
     image: triticeaetoolbox/breedbase_web:latest
     depends_on:
@@ -85,6 +90,7 @@ services:
       - type: bind
         source: ./mnt/blast_databases/hordeum
         target: /home/production/cxgn_blast_databases
+  # end hordeum
   breedbase_db:
     image: triticeaetoolbox/breedbase_database:latest
     container_name: breedbase_db
