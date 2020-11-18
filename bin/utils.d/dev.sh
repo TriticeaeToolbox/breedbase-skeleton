@@ -47,7 +47,7 @@ MASON_DIR="$BB_HOME"/repos/mason
 
 # Check if the service already exists
 echo "Checking if dev service already exists [$DEV_SERVICE]..."
-exists=$(cat "$DOCKER_COMPOSE_FILE" | grep " *# *start $DEV_SERVICE")
+exists=$(cat "$DOCKER_COMPOSE_FILE" | grep "^ *$DEV_SERVICE:$")
 if [ $? -eq 0 ]; then
     echo "ERROR: The dev service already exists! [$DEV_SERVICE]"
     exit 1
@@ -55,7 +55,7 @@ fi
 
 # Check if the template service exists
 echo "Checking if template service exists [$TEMPLATE]..."
-exists=$(cat "$DOCKER_COMPOSE_FILE" | grep " *# * start $TEMPLATE")
+exists=$(cat "$DOCKER_COMPOSE_FILE" | grep "^ *$TEMPLATE:$")
 if [ $? -eq 1 ]; then
     echo "ERROR: The template service does not exist! [$TEMPLATE]"
     exit 1
@@ -94,10 +94,12 @@ if [ -f "$DEV_SGN_CONF" ]; then
     echo "WARNING: the sgn conf file ($DEV_SGN_CONF) already exists"
     read -p "Do you want to replace the file? (y/N) " -r
     if [[ $REPLY =~ ^[Yy][Ee]?[Ss]?$ ]]; then
+        echo "...replacing sgn conf file [$TEMPLATE_SGN_CONF -> $DEV_SGN_CONF]"
         rm "$DEV_SGN_CONF"
         cp "$TEMPLATE_SGN_CONF" "$DEV_SGN_CONF"
     fi
 else
+    echo "...copying sgn conf file [$TEMPLATE_SGN_CONF -> $DEV_SGN_CONF]"
     cp "$TEMPLATE_SGN_CONF" "$DEV_SGN_CONF"
 fi
 
@@ -106,27 +108,30 @@ if [ -f "$DEV_MASON_CONF" ]; then
     echo "WARNING: the mason conf file ($DEV_MASON_CONF) already exists"
     read -p "Do you want to replace the file? (y/N) " -r
     if [[ $REPLY =~ ^[Yy][Ee]?[Ss]?$ ]]; then
+        echo "...replacing mason conf file [$TEMPLATE_MASON_CONF -> $DEV_MASON_CONF]"
         rm "$DEV_MASON_CONF"
         cp "$TEMPLATE_MASON_CONF" "$DEV_MASON_CONF"
     fi
 else
+    echo "...copying mason conf file [$TEMPLATE_MASON_CONF -> $DEV_MASON_CONF]"
     cp "$TEMPLATE_MASON_CONF" "$DEV_MASON_CONF"
 fi
 
 
 # Copy the template yaml definition
-yaml=$(sed -n "/^ *# *start $TEMPLATE/,/^ *# *end $TEMPLATE/p" "$DOCKER_COMPOSE_FILE")
+spaces=$(grep -E "^( *)$TEMPLATE:$" "$DOCKER_COMPOSE_FILE" | sed "s/$TEMPLATE://")
+yaml=$(sed -n "/^$spaces$TEMPLATE:$/,/^$spaces[a-Z]*:$/p" "$DOCKER_COMPOSE_FILE" | head -n -1)
+
 
 # Create the dev yaml definition
 yaml=$(echo "$yaml" | sed -E "s/^( *)# *start $TEMPLATE/\1# start $DEV_SERVICE/g")
 yaml=$(echo "$yaml" | sed -E "s/^( *)# *end $TEMPLATE/\1# end $DEV_SERVICE/g")
 yaml=$(echo "$yaml" | sed -E "s/^( *)$TEMPLATE:$/\1$DEV_SERVICE:/g")
 yaml=$(echo "$yaml" | sed -E "s/^( *)container_name:.*/\1container_name: $DEV_NAME/g")
-yaml=$(echo "$yaml" | sed -E "s/^( *)- *([0-9]+):8080$/\1- 1\2:8080/g")
+yaml=$(echo "$yaml" | sed -E "s/^( *)- *([0-9]+):8080$/\1- 8\2:8080/g")
+yaml=$(echo "$yaml" | sed -E "s/^( *)source: (.*)\/$TEMPLATE.conf$/\1source: \2\/$DEV_SERVICE.conf/g")
+yaml=$(echo "$yaml" | sed -E "s/^( *)source: (.*)\/$TEMPLATE.mas$/\1source: \2\/$DEV_SERVICE.mas/g")
 
-# update port
-# update .conf file
-# update .mas file
 # add sgn repo
 # add mason repo
 
