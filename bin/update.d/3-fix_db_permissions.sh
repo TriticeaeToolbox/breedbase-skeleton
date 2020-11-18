@@ -6,6 +6,7 @@
 #
 
 BB_HOME="$1"
+SERVICE="$2"
 BREEDBASE="$BB_HOME/bin/breedbase"
 DOCKER_COMPOSE_FILE="$BB_HOME/docker-compose.yml"
 BB_CONFIG_DIR="$BB_HOME/config/"
@@ -20,8 +21,12 @@ DOCKER_DB_SERVICE="breedbase_db"
 
 
 # Get the defined web services
-services=$("$DOCKER_COMPOSE" -f "$DOCKER_COMPOSE_FILE" config --services)
-IFS=$'\n' read -d '' -r -a services <<< "$services"
+if [ -z "$SERVICE" ]; then
+    services=$("$DOCKER_COMPOSE" -f "$DOCKER_COMPOSE_FILE" config --services)
+    IFS=$'\n' read -d '' -r -a services <<< "$services"
+else
+    services="$SERVICE"
+fi
 
 
 echo "==> Setting Database Permissions..."

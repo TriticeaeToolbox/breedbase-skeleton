@@ -30,6 +30,7 @@ BB_UTILS="$BB_HOME/bin/utils"
 DOCKER_COMPOSE_FILE="$BB_HOME/docker-compose.yml"
 
 # Path to Docker binaries
+DOCKER="$(which docker)"
 DOCKER_COMPOSE="$(which docker-compose)"
 
 # Docker Container Labels
@@ -60,9 +61,10 @@ USAGE=$(cat <<-END
     reload <triticum|avena|hordeum|...>     Reload the sgn web-app (to incorporate configuration and code changes)
     setup [script]                          Download docker images and run initial setup scripts
                                                 when script is specified, the matching setup script will run
-    update [--force|step]                   Update docker images and run update scripts
+    update [--force|script [service]]       Update docker images and run update scripts
                                                 --force will force run all of the update scripts
                                                 when script is specified, the matching update script will run
+                                                when service is specified, the update scripts will only run on the specified service
 
   Utilities:
     confirm <triticum|avena|hordeum|...> <user>     Confirm the account of the user on the specified service
@@ -238,10 +240,12 @@ setup() {
 # UPDATE
 # Run the breedbase update script
 # Arguments:
-#   flag - "--force" will force run the update scripts
+#   flag - "--force" will force run the update scripts, optionally followed by the name of the service
+#      or
+#   script - the update script to run, optionally followed by the name of the service
 ########
 update() {
-    "$BB_UPDATE" "$1"
+    "$BB_UPDATE" "$1" "${@:2}"
 }
 
 

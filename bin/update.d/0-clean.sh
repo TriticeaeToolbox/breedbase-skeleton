@@ -6,7 +6,10 @@
 #
 
 BB_HOME="$1"
+SERVICE="$2"
 BREEDBASE="$BB_HOME/bin/breedbase"
 
-echo "==> Removing existing T3/Breedbase containers..."
-"$BREEDBASE" clean
+if [ -z "SERVICE" ]; then
+    echo "==> Removing existing T3/Breedbase containers..."
+    "$BREEDBASE" clean "$SERVICE"
+fi

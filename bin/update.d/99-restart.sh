@@ -7,8 +7,9 @@
 #
 
 BB_HOME="$1"
+SERVICE="$2"
 BREEDBASE="$BB_HOME/bin/breedbase"
 
 echo "==> Restarting the T3/Breedbase Docker Containers..."
-"$BREEDBASE" stop
-"$BREEDBASE" start
+"$BREEDBASE" stop "$SERVICE"
+"$BREEDBASE" start "$SERVICE"

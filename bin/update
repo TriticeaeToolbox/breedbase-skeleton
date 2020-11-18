@@ -7,7 +7,8 @@
 #   - run all of the latest database patches for each crop
 #   - update the trait ontology for each crop
 # This script can be run with a --force flag to force the running of the update scripts
-# (such as after the initial setup)
+# (such as after the initial setup), optionally followed by the name of the service to 
+# run the update scripts on
 # EXIT CODES:
 #   0 = no update
 #   100 = database image update
@@ -64,6 +65,7 @@ if [[ "$1" == "--setup" ]]; then
     SETUP=1
 elif [[ "$1" == "--force" ]]; then
     FORCE=1
+    SERVICE="$2"
 elif [[ ! -z "$1" ]]; then
     files=$(find "$UPDATE_SCRIPTS" -name "$1*.sh")
     count=$(echo -n "$files" | grep -c '^')
@@ -75,6 +77,7 @@ elif [[ ! -z "$1" ]]; then
         exit 1
     else
         SCRIPT=$(basename "$files")
+        SERVICE="$2"
     fi
 fi
 
@@ -142,7 +145,7 @@ if [[ ("$db_updated" -eq 1) || ("$web_updated" -eq 1) || ("$SETUP" -eq 1) || ("$
     for f in "$UPDATE_SCRIPTS"/$scripts; do
         echo ""
         echo "[$(basename $f)]"
-        if ! bash "$f" "$BB_HOME"; then 
+        if ! bash "$f" "$BB_HOME" "$SERVICE"; then 
             echo "ERROR: Update script failed! [$f]"
             exit 1
         fi
