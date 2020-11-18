@@ -30,7 +30,6 @@ BB_UTILS="$BB_HOME/bin/utils"
 DOCKER_COMPOSE_FILE="$BB_HOME/docker-compose.yml"
 
 # Path to Docker binaries
-DOCKER="$(which docker)"
 DOCKER_COMPOSE="$(which docker-compose)"
 
 # Docker Container Labels
@@ -195,13 +194,7 @@ log() {
     if [[ "$1" == "db" ]]; then
         "$DOCKER_COMPOSE" -f "$DOCKER_COMPOSE_FILE" logs -f "$DOCKER_DB_SERVICE"
     else
-        container=breedbase_"$1"
-        container_hash=$("$DOCKER" ps -q -f name="$container")
-        if [ ! -z $container_hash ]; then
-            "$DOCKER" exec "$container" tail -f /var/log/sgn/error.log
-        else
-            "$DOCKER_COMPOSE" -f "$DOCKER_COMPOSE_FILE" exec "$1" tail -f /var/log/sgn/error.log
-        fi
+        "$DOCKER_COMPOSE" -f "$DOCKER_COMPOSE_FILE" exec "$1" tail -f /var/log/sgn/error.log
     fi
 }
 
@@ -216,13 +209,7 @@ bash() {
     if [[ "$1" == "db" ]]; then
         "$DOCKER_COMPOSE" -f "$DOCKER_COMPOSE_FILE" exec "$DOCKER_DB_SERVICE" bash
     else
-        container=breedbase_"$1"
-        container_hash=$("$DOCKER" ps -q -f name="$container")
-        if [ ! -z $container_hash ]; then
-            "$DOCKER" exec -it "$container" bash
-        else
-            "$DOCKER_COMPOSE" -f "$DOCKER_COMPOSE_FILE" exec "$1" bash
-        fi
+        "$DOCKER_COMPOSE" -f "$DOCKER_COMPOSE_FILE" exec "$1" bash
     fi
 }
 
@@ -234,13 +221,7 @@ bash() {
 #   service - the breedbase web service name
 ########
 reload() {
-    container=breedbase_"$1"
-    container_hash=$("$DOCKER" ps -q -f name="$container")
-    if [ ! -z $container_hash ]; then
-        "$DOCKER" exec "$container" bash -c 'kill -SIGHUP $(cat /tmp/sgn.pid)'
-    else
-        "$DOCKER_COMPOSE" -f "$DOCKER_COMPOSE_FILE" exec "$1" bash -c 'kill -SIGHUP $(cat /tmp/sgn.pid)'
-    fi
+    "$DOCKER_COMPOSE" -f "$DOCKER_COMPOSE_FILE" exec "$1" bash -c 'kill -SIGHUP $(cat /tmp/sgn.pid)'
 }
 
 
