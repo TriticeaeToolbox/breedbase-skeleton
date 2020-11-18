@@ -315,9 +315,6 @@ case "$1" in
     "patch")
         utils patch $args
         ;;
-    "dev")
-        utils dev $args
-        ;;
     *)
         echo "$USAGE"
         exit 1
