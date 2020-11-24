@@ -8,8 +8,13 @@
 backups/*
 !backups/.gitkeep
 
-config/dev*.conf
-config/dev*.mas
+config/*
+!config/triticum.conf
+!config/triticum.mas
+!config/avena.conf
+!config/avena.mas
+!config/hordeum.conf
+!config/hordeum.mas
 
 mnt/*/archive/*
 !mnt/*/archive/.gitkeep
