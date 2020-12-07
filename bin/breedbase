@@ -70,6 +70,7 @@ USAGE=$(cat <<-END
     confirm <triticum|avena|hordeum|...> <user>     Confirm the account of the user on the specified service
                                                         The user can be specified by username or email
     patch <triticum|avena|hordeum|...> <patch>      Run the specified DB patch on the database of the specified service 
+    pull [triticum|avena|hordeum|...]               Pull the latest code from the sgn and mason repos (for the specified service)
 END
 )
 
@@ -299,6 +300,9 @@ case "$1" in
         ;;
     "patch")
         utils patch $args
+        ;;
+    "pull")
+        utils pull $args
         ;;
     *)
         echo "$USAGE"
