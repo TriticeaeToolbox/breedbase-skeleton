@@ -16,6 +16,7 @@ SERVICE="$2"
 # Set Breedbase Paths
 DOCKER_COMPOSE_FILE="$BB_HOME/docker-compose.yml"
 BB_CONFIG_DIR="$BB_HOME/config/"
+BREEDBASE="$BB_HOME/bin/breedbase"
 
 # Path to Docker binaries
 DOCKER_COMPOSE=$(which docker-compose)
@@ -36,6 +37,7 @@ for service in "${services[@]}"; do
         mason_dir=$(cat "$BB_CONFIG_DIR/$service.conf" | grep "^ *add_comp_root" | awk '{$1=$1;print}' | cut -d ' ' -f 2)
         cmd="cd /home/production/cxgn/sgn; git pull; cd \"$mason_dir\"; cd ../; git pull"
         "$DOCKER_COMPOSE" -f "$DOCKER_COMPOSE_FILE" exec "$service" bash -c "$cmd"
+        "$BREEDBASE" reload "$service"
     fi
 done
 
