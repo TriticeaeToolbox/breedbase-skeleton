@@ -35,10 +35,12 @@ for service in "${services[@]}"; do
         archive=$(cat "$BB_CONFIG_DIR/$service.conf" | grep ^archive_path | tr -s ' ' | xargs | cut -d ' ' -f 2)
         submissions=$(cat "$BB_CONFIG_DIR/$service.conf" | grep ^submission_path | tr -s ' ' | xargs | cut -d ' ' -f 2)
         static_content=$(cat "$BB_CONFIG_DIR/$service.conf" | grep ^static_content_path | tr -s ' ' | xargs | cut -d ' ' -f 2)
+        export="/home/production/export"
         cmd="mkdir -p \"$tmp/mason\"; chown -R www-data:www-data \"$tmp/mason\";
 chown -R www-data:www-data \"$archive\";
 chown -R www-data:www-data \"$submissions\";
-mkdir -p \"$static_content/folder\"; chown -R www-data:www-data \"$static_content/folder\""
+mkdir -p \"$static_content/folder\"; chown -R www-data:www-data \"$static_content/folder\";
+mkdir -p \"$export\"; chown -R www-data:www-data \"$export\"; ln -snf \"$export\" /export"
         "$DOCKER_COMPOSE" -f "$DOCKER_COMPOSE_FILE" exec "$service" bash -c "$cmd"
     fi
 done
