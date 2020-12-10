@@ -31,8 +31,10 @@ else
 fi
 
 # Update each service
+echo "==> Pulling Code Upadtes..."
 for service in "${services[@]}"; do
     if [[ "$service" != "$DOCKER_DB_SERVICE" ]]; then
+        echo "... pulling updates into $service"
         config="$BB_CONFIG_DIR/$service.conf"
         mason_dir=$(cat "$BB_CONFIG_DIR/$service.conf" | grep "^ *add_comp_root" | awk '{$1=$1;print}' | cut -d ' ' -f 2)
         cmd="cd /home/production/cxgn/sgn; git pull; cd \"$mason_dir\"; cd ../; git pull"
