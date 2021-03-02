@@ -308,7 +308,7 @@ GRANT SELECT,INSERT,UPDATE ON TABLE phenome.stock_allele TO web_usr;
 GRANT USAGE ON SEQUENCE phenome.stock_allele_stock_allele_id_seq TO web_usr;
 GRANT SELECT,INSERT,UPDATE ON TABLE phenome.stock_image TO web_usr;
 GRANT USAGE ON SEQUENCE phenome.stock_image_stock_image_id_seq TO web_usr;
-GRANT SELECT,INSERT,UPDATE ON TABLE phenome.stock_owner TO web_usr;
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE phenome.stock_owner TO web_usr;
 GRANT USAGE ON SEQUENCE phenome.stock_owner_stock_owner_id_seq TO web_usr;
 GRANT SELECT ON TABLE phenome.tomato_il_bin TO PUBLIC;
 GRANT SELECT,INSERT,UPDATE ON TABLE phenome.tomato_il_bin TO web_usr;
