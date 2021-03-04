@@ -464,6 +464,8 @@ GRANT SELECT,DELETE ON TABLE public.feature_relationshipprop TO web_usr;
 GRANT SELECT,DELETE ON TABLE public.feature_relationshipprop_pub TO web_usr;
 GRANT SELECT,DELETE ON TABLE public.featureloc_pub TO web_usr;
 GRANT SELECT,DELETE ON TABLE public.featureprop_pub TO web_usr;
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.featureprop_json TO web_usr;
+GRANT SELECT ON SEQUENCE public.featureprop_json_feature_json_id_seq TO web_usr;
 GRANT SELECT,DELETE ON TABLE public.forward_amplicon_sequence_information TO web_usr;
 GRANT SELECT,DELETE ON TABLE public.forward_amplicon_sequence_markers TO web_usr;
 GRANT SELECT,DELETE ON TABLE public.fpc_band TO web_usr;
